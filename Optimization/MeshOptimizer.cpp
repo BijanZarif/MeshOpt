@@ -73,6 +73,7 @@ void MeshOptimizer::InsertActiveNodes(const MEl* el,
   for(int i=0; i<nn; i++){
     int type = nodes.at(elnodes[i])->getType();
     if(dims_to_opt[type]){
+      //activenodes[elnodes[i]] = 0;
       bool opt_face = true;
       if(geo_faces_to_opt.find(nodes.at(elnodes[i])->getGeoEntity()) ==
 	 geo_faces_to_opt.end() && geo_faces_to_opt.size() != 0){
@@ -92,7 +93,6 @@ bool HasActiveNode(const MEl* el,
   //const int ncn = el->numCornerNodes();
   const gind* elnodes = el->getNodes();
   const int nn = el->NumNodes();
-
   for(int i=0; i<nn; i++){
     if(activenodes.find(elnodes[i]) != activenodes.end()) return true;
   }
@@ -247,3 +247,30 @@ const double MeshOptimizer::minMeshQuality() const{
   }
   return min_quality;
 }
+
+double MeshOptimizer::minMeshDetS() const{
+  double min_detS = 1.0/0.0;
+  arma::mat gradMerit;
+  for(auto el = idealElements.begin(); el != idealElements.end(); ++el){
+    std::unique_ptr<OptEl> optel = 
+      optel_manager.CreateOptEl(el->first,el->second);
+
+    min_detS = std::min(min_detS,optel->computeMinDetS());
+
+  }
+  return min_detS;
+}
+
+double MeshOptimizer::minMeshDetJ() const{
+  double min_detJ = 1.0/0.0;
+  arma::mat gradMerit;
+  for(auto el = idealElements.begin(); el != idealElements.end(); ++el){
+    std::unique_ptr<OptEl> optel = 
+      optel_manager.CreateOptEl(el->first,el->second);
+
+    min_detJ = std::min(min_detJ,optel->computeMinDetJ());
+
+  }
+  return min_detJ;
+}
+

@@ -69,6 +69,8 @@ int BoundaryLayerGenerator::GenerateBL(){
  
  // Insert the BL nodes
   InsertBLNodes(1,extrusion_dist);
+  std::cout << "before insert BL nodes" << std::endl;
+  //InsertBLNodes(normal_map,Nlayers,thickness,1);
   std::cout << "after insert BL nodes" << std::endl;
 
   //ResetBLNodes(1,extrusion_dist);
@@ -80,7 +82,7 @@ int BoundaryLayerGenerator::GenerateBL(){
  // Insert the BL elements
  InsertBLElements(mesh.getElementsNC(),bl_elements,Nlayers,thickness);
  InsertBLElements(mesh.getSubElementsNC(),symmetry_elements,Nlayers,
- 		  thickness,true);
+  		  thickness,true);
 
 
 
@@ -220,10 +222,11 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
     std::vector<arma::vec3> node_normals(ncn);
     arma::vec3 n;
     arma::vec3 weight;
+    
     if(dim == 1){
       n = El1DNormal(cn,nodes,n1);
       for(int i = 0; i < ncn; i++) node_normals[i] = n;
-      //weight = {1.0, 1.0, 1.0};
+      weight = {1.0, 1.0, 1.0};
     }
     else if(dim == 2){
       n = normalFromElnodes(cn,nodes);
@@ -296,7 +299,9 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
 	double theta = acos(dot(r1,r2)/(norm(r1,2.0)*norm(r2,2.0)));
 	if((*el)->getDim() == 1) theta = 1.0;
 	weight(i) = theta/(2.0*arma::datum::pi);
+	
       }
+	
     }
     else{
       cout << "dimension is > 2!" << endl;
@@ -305,12 +310,12 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
     for(int i=0; i<(*el)->numCornerNodes(); i++){
       const int node_dim = nodes.at(cn[i])->getType();
       retpair ret = 
-	normal_map.insert(std::make_pair(cn[i],BLNodeInfo(node_normals[i],
+	normal_map.insert(std::make_pair(cn[i],BLNodeInfo(weight(i)*node_normals[i],
 							  node_dim,
 							  thickness)));
       if(ret.second == false){
 	
-	//ret.first->second.normal+= n*weight(i);
+	ret.first->second.normal+= node_normals[i]*weight(i);
       }
     }
 
@@ -583,7 +588,10 @@ InsertBLNodes(const double ratio,
 
     if(mesh.Dimension() < 3) 
       entity = NodeParamsOnGeometry(currnode,nd->second.normal,
-				    nd->second.dist,params,xyz);
+				    ratio*h,params,xyz);
+
+    //params(0) = 1;
+    //params(1) = 1;
 
     //std::cout <<  "h0" << std::endl;
     if(nd->second.on_symmetry){
@@ -611,6 +619,7 @@ InsertBLNodes(const double ratio,
     else if(ratio == 1){
       //std::cout << "begin ratio == 1" << std::endl;
       int type = mesh.MeshDimension();
+      //std::cout << "creating node on entity: " << entity << std::endl;
       nodes[nc] = nodeFactory::Instance()->
 	CreateNode(type,newpts.memptr(),entity,params[0],params[1]);
       //std::cout << "end ratio == 1" << std::endl;
@@ -635,6 +644,7 @@ InsertBLNodes(const double ratio,
 
 
 }
+
 
 /*
 void BoundaryLayerGenerator::
@@ -760,6 +770,7 @@ InsertBLNodes(const normal_map_type& normal_map,
 }
 */
 
+
 /*
 void BoundaryLayerGenerator::
 ResetBLNodes(const normal_map_type& normal_map,
@@ -873,6 +884,7 @@ InsertBLElements(element_set& elements,
       //std::cout << idealExtrude << std::endl;
 
       idealElements[(*ret.first).get()] = ideal;
+      //idealElements[(*ret.first).get()] = idealExtrude;
 
       //if(dim == mesh.Dimension()-2) idealElements[(*ret.first).get()] = ideal;
       //else idealElements[(*ret.first).get()] = idealExtrude;

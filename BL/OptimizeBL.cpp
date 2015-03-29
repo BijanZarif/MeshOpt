@@ -55,11 +55,11 @@ int BoundaryLayerGenerator::OptimizeBL(){
 
 
   //SubmeshOptimizer mesh_optimizer(mesh,optel_manager,ideal_elements,
-  //				  2); 
-//mesh_optimizer.Optimize(1.2,{0,0,1,0},symmetry_faces);
+  //				  2);  
+  //mesh_optimizer.Optimize(1.0,{0,0,1,0},symmetry_faces);
 
   SubmeshOptimizer mesh_optimizer(mesh,optel_manager,ideal_elements,
-  				  mesh.Dimension()); 
+   				  mesh.Dimension()); 
 
   if(mesh.Dimension() == 3){
     mesh_optimizer.Optimize(1.2,{0,0,1,1},symmetry_faces,clamped_nodes);

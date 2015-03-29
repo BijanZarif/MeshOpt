@@ -30,7 +30,8 @@ class MeshOptimizer{
   int UpdateMeshMerits(const std::unordered_set<MEl*>& watch);
   int UpdateMeshMerits();
   const double minMeshQuality() const;
-
+  double minMeshDetS() const;
+  double minMeshDetJ() const;
 
  protected:
   MeshContainer& mesh;

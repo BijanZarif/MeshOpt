@@ -79,13 +79,13 @@ class BoundaryLayerGenerator{
 		     const double ratio=-1,
 		     const std::vector<double>& max_extrude=
 		     std::vector<double>());
+  
   */
-
   int SmoothField(double Nsmooth, const std::vector<MEl*>& bl_elements,
 		  std::vector<double>& field);
 
   void InsertBLNodes(const double ratio, 
-		     const std::vector<double>& extrusion_dist);
+  		     const std::vector<double>& extrusion_dist);
 
   void ResetBLNodes(const double ratio, 
 		     const std::vector<double>& extrusion_dist);

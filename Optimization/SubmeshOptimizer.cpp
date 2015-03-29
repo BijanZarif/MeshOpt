@@ -88,6 +88,12 @@ double SubmeshOptimizer::OptimizeOneByOne(double threshold, int Nnearest,
     const std::vector<const MEl*>& elements = Node2ElementList[nd->first];
     const int sz = elements.size();
 
+    arma::vec3 pos_old = nodes.at(nd->first)->xyzvec3();
+    const double* pold = nodes.at(nd->first)->getParametricCoords();
+    arma::vec3 parametric_old;
+    for(int i = 0; i < nodes.at(nd->first)->getType(); i++){
+      parametric_old[i] = pold[i];
+    } 
     if(sz == 1 && nodes.at(nd->first)->getType() == 2){
       //std::cout << "size is 1!" << std::endl;
       //std::cout << nodes.at(nd->first)->getGeoEntity() << std::endl;
@@ -134,6 +140,11 @@ double SubmeshOptimizer::OptimizeOneByOne(double threshold, int Nnearest,
     double newmerit = 0;
     for(int i = 0; i < elements.size(); i++){
       newmerit += merits[i];
+    }
+    if(newmerit > merit0){
+      //std::cout << "newmerit > merit0!" << std::endl;
+      //nodes.at(nd->first)->setXYZ(pos_old.memptr());
+      //nodes.at(nd->first)->setParametricCoords(parametric_old.memptr());
     }
     //assert(newmerit < merit0);
 
@@ -208,7 +219,9 @@ int SubmeshOptimizer::Optimize(double threshold, std::vector<bool> to_opt,
     double diff = std::abs(Merit_old-Merit);
     //double diff = 1.0;
     cout << "diff: " << diff << endl;
-    if(diff < 1.0e-3){
+    std::cout << "min detS: " << minMeshDetS() << std::endl;
+    std::cout << "min detJ: " << minMeshDetJ() << std::endl;
+    if(diff < 1.0e-2){
       //if(diff < 1.0e-2){
       //cout << "Breaking" << endl;
       break;

@@ -54,6 +54,7 @@ int BoundaryLayerGenerator::GenerateBL(){
 
  
  
+
  // Insert the BL nodes
  InsertBLNodes(normal_map,Nlayers,thickness);
 
