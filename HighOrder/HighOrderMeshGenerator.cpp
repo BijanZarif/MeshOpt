@@ -13,13 +13,16 @@
 #include "SubmeshOptimizer.h"
 #include "ShapeFunctionMatrices.h"
 
+#include <assert.h>
+
 HighOrderMeshGenerator::
 HighOrderMeshGenerator(MeshContainer& mesh, GeometryContainer&geometry):
   mesh(mesh), geometry(geometry){
   meshcurr = std::make_shared<MeshContainer>();
   meshold = std::make_shared<MeshContainer>();
   index_factory = std::make_shared<NodeIndexFactory>();
-  node_interpolator = std::make_shared<NodeInterpolator>(0);
+  node_interpolator = 
+    std::make_shared<NodeInterpolator>(mesh.getNodeSpacingType());
   //parametric_coordinate_evaluator = 
   //  std::make_shared<ParametricCoordinateEvaluator>();
 }
@@ -30,8 +33,8 @@ HighOrderMeshGenerator::generateHighOrderMeshRecursive(int order){
 
   //order = 2;
 
-  std::shared_ptr<ShapeFunctionMatricesFactory> sf_factory =
-    std::make_shared<ShapeFunctionMatricesFactory>();
+  //std::shared_ptr<ShapeFunctionMatricesFactory> sf_factory =
+  //  std::make_shared<ShapeFunctionMatricesFactory>();
 
   for(int ord = curr_order+1; ord <= order; ord++){
     //  for(int ord = order; ord <= order; ord++){
@@ -226,7 +229,14 @@ insertNewNodes(const unique_element_ptr& el,
   //std::cout << "ni_new type: " << ni_new->getType() << std::endl;
   //arma::uvec new_interior_indices;
   //std::cout << "el type: " << el->getElementType() << std::endl;
-  arma::uvec new_interior_indices(ni_new->getInteriorNodes());
+  //arma::uvec new_interior_indices;
+  
+  const std::vector<indtype>& interior = ni_new->getInteriorNodes();
+  arma::uvec new_interior_indices(interior.size());
+  for(int i = 0; i < interior.size(); i++){
+    new_interior_indices[i] = interior[i];
+  }
+  //arma::uvec new_interior_indices(ni_new->getInteriorNodes()); // HACK!
   //std::cout << "h3.1" << std::endl;
   //std::cout << new_interior_indices << std::endl;
   //std::cout << newelnodes << std::endl;

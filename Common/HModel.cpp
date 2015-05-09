@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <boost/program_options.hpp>
+//#include <boost/program_options.hpp>
 #include "HModel.h"
 #include "MeshReader.h"
 #include "GeometryReader.h"
@@ -20,7 +20,7 @@
 #include "assert.h"
 
 using namespace std;
-namespace po = boost::program_options;
+//namespace po = boost::program_options;
 
 HModel::HModel(void){
   
@@ -36,10 +36,28 @@ int HModel::readMesh(void){
   //std::cout << "gmsh file name: " << mesh_opt_config->getCaseParameters()->gmshFileName << std::endl;
   mesh_reader->ReadMesh(mesh_container,
 			mesh_opt_config->getCaseParameters()->gmshFileName);
+  
+  // Seg geo tags
+  std::vector<myEdge>& edges = geometry_container.getEdgesNC();
+  std::vector<myFace>& faces = geometry_container.getFacesNC();
 
-  mesh_reader->SetGeoTags(geometry_container);
+  for(auto it = mesh_reader->edge2bc_map.begin(); 
+      it != mesh_reader->edge2bc_map.end(); ++it){
+    edges[it->first].setBCTag(it->second);
+  }
+
+  for(auto it = mesh_reader->face2bc_map.begin(); 
+      it != mesh_reader->face2bc_map.end(); ++it){
+    faces[it->first].setBCTag(it->second);
+  }
+
+  //mesh_reader->SetGeoTags(geometry_container);
   fixFaceOrientations(mesh_container);
 
+  int node_spacing = mesh_opt_config->getHighOrderParameters()->
+    OptimizedNodeSpacing;
+
+  mesh_container.setNodeSpacingType(node_spacing);
   return 1;
 }
 
@@ -172,7 +190,7 @@ int HModel::generateBL(){
   */
 
   bl_generator->GenerateBL();
-  std::cout << "After generate BL" << std::endl;
+  //std::cout << "After generate BL" << std::endl;
 
   bl_generator->OptimizeBL();
 

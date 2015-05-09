@@ -20,33 +20,50 @@
 #include "Mnode.h"
 #include <algorithm>
 
+#include <assert.h>
+
 int BoundaryLayerGenerator::GenerateBL(){
  
   double thickness = bl_parameters->thickness;
   //int Nlayers = bl_parameters->NLayers;
   int Nlayers = 1;
-  double factor = 0.01;
-  const double safety_factor = 2;
-  const double max_normal_thickness_factor = 10;
+  double factor = 1;
+  const double safety_factor = 4;
+  const double max_normal_thickness_factor = 20;
+
+  std::cout << "h0" << std::endl;
 
   findSymmetryFaces();
 
-  std::vector<MEl*> bl_elements = FindBLElements(mesh.getSubElements());
+  std::cout << "h1" << std::endl;
+
+  bl_elements = FindBLElements(mesh.getSubElements());
 
   if(bl_elements.size() == 0) return 1;
 
-  
+  std::cout << "h2" << std::endl;
 
   // Get node normals
   //normal_map_type normal_map = CreateNodeInfoMap(bl_elements);
  
   normal_map = CreateNodeInfoMap(bl_elements,thickness);
 
+  std::cout << "h3" << std::endl;
+
   // Map original nodes to new nodes
-  gindmap newnode_map = CreateNewNodeMap(normal_map);
+  newnode_map = CreateNewNodeMap(normal_map);
+
+  std::cout << "h4" << std::endl;
+
+  //setClampedNodes();
+  std::cout << "clamped nodes size: " << clamped_nodes.size() << std::endl;
+
+  std::cout << "h5" << std::endl;
 
   std::vector<double> max_extrude = 
     getMaximumSafeExtrusionDistance(safety_factor);
+
+  std::cout << "h6" << std::endl;
 
   std::vector<double> extrusion_dist = max_extrude;
   for(auto it = extrusion_dist.begin(); it != extrusion_dist.end(); ++it){
@@ -84,7 +101,7 @@ int BoundaryLayerGenerator::GenerateBL(){
  InsertBLElements(mesh.getSubElementsNC(),symmetry_elements,Nlayers,
   		  thickness,true);
 
-
+ 
 
  // Reset the BL nodes
  InsertBLNodes(1.0/safety_factor,max_extrude);
@@ -150,6 +167,151 @@ SmoothField(double Nsmooth, const std::vector<MEl*>& bl_elements,
     }
   }
 }
+
+int BoundaryLayerGenerator::setClampedNodes(){
+  
+  std::cout << "before set clamped nodes" << std::endl;
+  
+  std::vector<std::set<MEl*> > node2elements(normal_map.size());
+  
+  for(auto it = bl_elements.begin(); it != bl_elements.end(); ++it){
+    MEl* el = *it;
+    
+    const gind* elnodes = el->getNodes();
+
+    for(int i = 0; i < el->NumNodes(); i++){
+      assert(newnode_map.find(elnodes[i]) != newnode_map.end());
+      int nd = newnode_map[elnodes[i]];
+      node2elements[nd-NNorig].insert(el);
+    }
+  }
+
+  std::cout << "before newnode_map loop" << std::endl;
+
+  node_map& nodes = mesh.getNodesNC();
+  
+  for(auto it = newnode_map.begin(); it != newnode_map.end(); ++it){
+    const std::set<MEl*>& node_elements = node2elements[it->second-NNorig];
+    //std::cout << node_elements.size() << std::endl;
+    std::vector<arma::vec3> normals(node_elements.size());
+    int ecnt = 0;
+    for(auto it = node_elements.begin(); it != node_elements.end(); 
+	++it, ++ecnt){
+      const MEl* el = *it;
+      const gind* elnodes = el->getNodes();
+      if(el->getDim() == 1){
+	normals[ecnt] = El1DNormal(elnodes,nodes,{0,0,1});
+      }
+      else{
+	normals[ecnt] = El2DNormal(elnodes,nodes);
+      }
+ 
+    }
+    //std::cout << normals.size() << std::endl;
+
+    
+    if(nodes.at(it->first)->getType() < mesh.Dimension()-1){
+      double min_dot = 1.0/0.0;
+      for(auto iti = normals.begin(); iti != normals.end(); ++iti){
+	for(auto itj = normals.begin(); itj != normals.end(); ++itj){
+	  min_dot = std::min(min_dot,arma::dot(*iti,*itj));
+	}
+      }
+
+      if(min_dot < 0.25){
+	clamped_nodes.insert(it->second);
+	//std::cout << "clamped node entity: " << nodes.at(it->first)->getGeoEntity() << std::endl;
+      }
+    }
+    
+    clamped_nodes.insert(it->second);
+  }
+  std::cout << "size of clamped nodes: " << clamped_nodes.size() << std::endl;
+  
+
+  /*
+  std::set<int> bl_entities;
+  for(auto it = bl_elements.begin(); it != bl_elements.end(); ++it){
+    MEl* el = *it;
+    bl_entities.insert(el->getGeoEntity());
+  }
+  
+
+  
+  const std::map<int,std::set<int> >& Edge2FacesMap = 
+    geometry.getEdge2FacesMap();
+
+  const std::map<int,std::set<int> >& Vertex2EdgesMap = 
+    geometry.getVertex2EdgesMap();
+
+  
+  const std::map<int,std::set<int> >& Vertex2FacesMap = 
+    geometry.getVertex2FacesMap();
+
+
+  for(auto it = normal_map.begin(); it != normal_map.end(); ++it){
+    auto node = mesh.getNodesNC()[it->first];
+    int node_dim = node->getType();
+    int node_entity = node->getGeoEntity();
+    
+    std::vector<arma::vec3> normals;
+
+    if(mesh.Dimension() == 2){
+      if(node_dim == 0){
+	const std::set<int>& v2e = Vertex2EdgesMap.at(node_entity);
+	myVertex& my_vertex = geometry.getVerticesNC()[node_entity];
+
+	for(auto it = v2e.begin(); it != v2e.end(); ++it){
+	  if(bl_entities.find(*it) != bl_entities.end()){
+	    myEdge& my_edge = geometry.getEdgesNC()[*it];
+	    double u = my_edge.paramsOnEdge(&my_vertex);
+	    const arma::mat& deriv = my_edge.D1(&u).t();
+	    arma::vec3 normal = {deriv[1],-deriv[0],0};
+	    normal/= arma::norm(normal,2);
+	    normals.push_back(normal);
+	  }
+	}
+      }
+    } // end mesh.Dimension() == 2
+    else{
+      arma::mat deriv;
+      if(node_dim == 0){
+	const std::set<int>& v2f = Vertex2FacesMap.at(node_entity);
+	myVertex& my_vertex = geometry.getVerticesNC()[node_entity];
+	for(auto it = v2f.begin(); it != v2f.end(); ++it){
+	  if(bl_entities.find(*it) != bl_entities.end()){
+	    myFace& my_face = geometry.getFacesNC()[*it];
+	    const arma::mat& uv = my_face.paramsOnFace(&my_vertex);
+	    deriv = my_face.D1(uv.memptr()).t();
+	  }
+	}
+      }
+      else if(node_dim == 1){
+	const std::set<int> e2f = Edge2FacesMap.at(node_entity);
+	const myEdge& my_edge = geometry.getEdgesNC()[node_entity];
+	for(auto it = e2f.begin(); it != e2f.end(); ++it){
+	  if(bl_entities.find(*it) != bl_entities.end()){
+	    myFace& my_face = geometry.getFacesNC()[*it];
+	    const arma::mat& uv = 
+	      my_face.paramsOnFace(&my_edge,*node->getParametricCoords());
+	    deriv = my_face.D1(uv.memptr()).t();
+	  }
+	}
+      }
+      else if(node_dim == 2){
+	myFace& my_face = geometry.getFacesNC()[node_entity];
+        deriv = my_face.D1(node->getParametricCoords()).t();
+	
+      }
+      std::cout << deriv << std::endl;
+      arma::vec3 normal = cross(deriv.unsafe_col(0),deriv.unsafe_col(1));
+      normal/= arma::norm(normal,2);
+      normals.push_back(normal);
+    }
+  }
+  */
+}
+
 std::vector<MEl*> BoundaryLayerGenerator::
 FindBLElements(const element_set& elements){
   // const element_set& elements = mesh.getSubElements();
@@ -215,6 +377,51 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
   }
 
   normal_map_type normal_map;
+  /*
+  for(auto el = bl_elements.begin(); el != bl_elements.end(); ++el){
+    const gind* cn = (*el)->getCornerNodes();
+    arma::vec3 n;
+    arma::vec3 weight;
+    if(dim == 1){
+      n = El1DNormal(cn,nodes,n1);
+      weight = {1.0, 1.0, 1.0};
+    }
+    else if(dim == 2){
+      n = normalFromElnodes(cn,nodes);
+
+      const unsigned int ind[3][2] = {{1,2},{2,0},{0,1}};
+      for(int i=0; i<(*el)->numCornerNodes(); i++){
+
+	arma::vec3 r1 = nodes.at(cn[ind[i][0]])->xyzvec3() 
+	  - nodes.at(cn[i])->xyzvec3();
+	arma::vec3 r2 = nodes.at(cn[ind[i][1]])->xyzvec3() 
+	  - nodes.at(cn[i])->xyzvec3();
+	double theta = acos(dot(r1,r2)/(norm(r1,2.0)*norm(r2,2.0)));
+	if((*el)->getDim() == 1) theta = 1.0;
+	weight(i) = theta/(2.0*arma::datum::pi);
+	assert(weight(i) > 0);
+      }
+    }
+    else{
+      cout << "dimension is > 2!" << endl;
+    }
+
+    for(int i=0; i<(*el)->numCornerNodes(); i++){
+      const int node_dim = nodes.at(cn[i])->getType();
+      retpair ret = 
+	normal_map.insert(std::make_pair(cn[i],BLNodeInfo(n*weight(i),node_dim,
+							  thickness)));
+      if(ret.second == false){
+	ret.first->second.normal+= n*weight(i);
+      }
+    }
+
+  }
+  for(auto nd = normal_map.begin(); nd != normal_map.end(); ++nd){
+    nd->second.normal/=arma::norm(nd->second.normal,2.0);
+  }
+  */
+  
   for(auto el = bl_elements.begin(); el != bl_elements.end(); ++el){
     const gind* cn = (*el)->getCornerNodes();
     //const gind elnodes = (*el)->getNodes();
@@ -222,6 +429,8 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
     std::vector<arma::vec3> node_normals(ncn);
     arma::vec3 n;
     arma::vec3 weight;
+    bool has_degenerate_mapping[4] = {false};
+    
     
     if(dim == 1){
       n = El1DNormal(cn,nodes,n1);
@@ -234,12 +443,16 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
       const unsigned int ind[3][2] = {{1,2},{2,0},{0,1}};
       for(int i=0; i<ncn; i++){
 	int type = nodes.at(cn[i])->getType();
-	
+       
 	node_normals[i] = n;
-	/*
+	
+	
 	if(type == 0){
 	  const std::map<int,std::set<int> >& Vertex2FacesMap = 
 	    geometry.getVertex2FacesMap();
+	  //std::cout << "vertex 2 face map size: " << Vertex2FacesMap.size() <<
+	  //  std::endl;
+
 	  int vertex = nodes.at(cn[i])->getGeoEntity();
 	  myVertex& my_vertex = geometry.getVerticesNC()[vertex];
 	  
@@ -253,12 +466,19 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
 	      const arma::mat& deriv_temp = my_face.D1(params.memptr());
 	      arma::mat deriv = deriv_temp.t();
 	      arma::vec3 normal = arma::cross(deriv.col(0),deriv.col(1));
-	      normal/= arma::norm(normal,2);
+	      double norm = arma::norm(normal,2);
+	      if(norm < 1.0e-10) has_degenerate_mapping[i] = true;
+	      normal/= norm;
+	      
 	      average_normal+= normal;
 	    }
 	  }
-	  average_normal/= arma::norm(average_normal,2);
-	  node_normals[i] = average_normal;
+	  if(!has_degenerate_mapping[i]){
+	    average_normal/= arma::norm(average_normal,2);
+	    node_normals[i] = average_normal;
+	  }
+	  //average_normal/= arma::norm(average_normal,2);
+	  //node_normals[i] = average_normal;
 	}
 	else if(type == 1){
 	  const std::map<int,std::set<int> >& Edge2FacesMap = 
@@ -279,7 +499,9 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
 	      const arma::mat& deriv_temp = my_face.D1(params.memptr());
 	      arma::mat deriv = deriv_temp.t();
 	      arma::vec3 normal = arma::cross(deriv.col(0),deriv.col(1));
-	      normal/= arma::norm(normal,2);
+	      double norm = arma::norm(normal,2);
+	      if(norm < 1.0e-10) has_degenerate_mapping[i] = true;
+	      normal/= norm;
 	      average_normal+= normal;
 	    }
 	    //if(dot(normal,n) > 0) node_normals[i] = normal;
@@ -288,10 +510,13 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
 
 	    //std::cout << "doing surface evaluation of normal!" << std::endl;
 	  }
-	  average_normal/= arma::norm(average_normal,2);
-	  node_normals[i] = average_normal;
-	}
-	*/
+	  if(!has_degenerate_mapping[i]){
+	    average_normal/= arma::norm(average_normal,2);
+	    node_normals[i] = average_normal;
+	  }
+	} // end type
+	
+
 	arma::vec3 r1 = nodes.at(cn[ind[i][0]])->xyzvec3() 
 	  - nodes.at(cn[i])->xyzvec3();
 	arma::vec3 r2 = nodes.at(cn[ind[i][1]])->xyzvec3() 
@@ -299,23 +524,35 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
 	double theta = acos(dot(r1,r2)/(norm(r1,2.0)*norm(r2,2.0)));
 	if((*el)->getDim() == 1) theta = 1.0;
 	weight(i) = theta/(2.0*arma::datum::pi);
-	
+	//weight(i) = 1;
       }
 	
     }
     else{
       cout << "dimension is > 2!" << endl;
     }
-
+    //for(int i = 0; i < 1; i++){
     for(int i=0; i<(*el)->numCornerNodes(); i++){
       const int node_dim = nodes.at(cn[i])->getType();
+      if(mesh.Dimension() == 3 && !has_degenerate_mapping[i]){
       retpair ret = 
-	normal_map.insert(std::make_pair(cn[i],BLNodeInfo(weight(i)*node_normals[i],
-							  node_dim,
-							  thickness)));
-      if(ret.second == false){
-	
-	ret.first->second.normal+= node_normals[i]*weight(i);
+	normal_map.insert(std::make_pair(cn[i],
+					 BLNodeInfo(node_normals[i],
+						    node_dim,
+						    thickness)));
+      
+      }
+      else{
+	retpair ret = 
+	  normal_map.insert(std::make_pair(cn[i],
+					   BLNodeInfo(weight(i)*node_normals[i],
+						      node_dim,
+						      thickness)));
+      
+	if(ret.second == false){
+	  //std::cout << "second is false" << std::endl;
+	  ret.first->second.normal+= node_normals[i]*weight(i);
+	}
       }
     }
 
@@ -323,8 +560,9 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
   for(auto nd = normal_map.begin(); nd != normal_map.end(); ++nd){
     nd->second.normal/=arma::norm(nd->second.normal,2.0);
   }
-
+  
   if(mesh_dim != 3) return normal_map;
+
 
   // Project to symmetry plane
   const std::map<int,std::set<int> >& Edge2FacesMap = 
@@ -336,6 +574,11 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
 
   //const int symmetry_surf = mesh.SymmetrySurface();
   arma::vec3 symmetry_normal = {0.0, 1.0, 0.0};
+  for(auto it = Vertex2FacesMap.begin(); it != Vertex2FacesMap.end(); ++it){
+    std::cout << it->first << std::endl;
+  }
+  std::cout << std::endl;
+
 
   for(auto nd = normal_map.begin(); nd != normal_map.end(); ++nd){
     nd->second.on_symmetry = false;
@@ -343,6 +586,7 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
       //std::cout << "symmetry faces: " << *sym << std::endl;
       const short int geo_entity = 
 	static_cast<MGeoNode*>(nodes.at(nd->first).get())->getGeoEntity();
+
       //int symmetry_eneity = -1;
       if(nd->second.node_dim == 1){
 	auto it = Edge2FacesMap.at(geo_entity).find(*sym);
@@ -359,6 +603,7 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
 	}
       }
     }
+ 
     if(nd->second.on_symmetry){
       //std::cout << "node is on symmetry face: " << nd->second.symmetry_entity
       //	<< std::endl;
@@ -368,6 +613,7 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
       n/=arma::norm(n,2.0);
       nd->second.normal = n;
     } 
+
   }
 
   return normal_map;
@@ -515,6 +761,7 @@ ReplaceNeighboringElements(element_set& elements,
     }
     if(found){
       int type = (*el)->getElementType();
+      int dim = (*el)->getDim();
 
       // Save ideal shape
       const gind* cn = (*el)->getCornerNodes();
@@ -537,6 +784,7 @@ ReplaceNeighboringElements(element_set& elements,
       newels.push_back(elementFactory::Instance()->CreateElement
 		       (type,nds,0,1,bc_tag,geo_entity,geo_type));
       idealElements[newels.back().get()] = ideal;
+	//if(dim == mesh.Dimension()) idealElements[newels.back().get()] = ideal;
     }
     else{
       ++el;
@@ -584,12 +832,22 @@ InsertBLNodes(const double ratio,
     arma::vec2 params;
     arma::vec3 newpts = coord;
 
-    //std::cout << newpts << std::endl;
+ 
+    //entity = NodeParamsOnGeometry(currnode,nd->second.normal,
+    //				  ratio*h,params,xyz);
+    
+    if(mesh.Dimension() == 2){
+      entity = 0;
+      const myFace& face = geometry.getFaces()[entity];
+	    
+      params = 
+	face.faceParamsFromPoint(newpts.memptr(),
+				 currnode->getParametricCoords());
 
-    if(mesh.Dimension() < 3) 
-      entity = NodeParamsOnGeometry(currnode,nd->second.normal,
-				    ratio*h,params,xyz);
+      face.param2xyz(params.memptr(),newpts.memptr());
 
+    }
+    
     //params(0) = 1;
     //params(1) = 1;
 
@@ -825,6 +1083,8 @@ InsertBLElements(element_set& elements,
       const gind* cn = (*el)->getCornerNodes();
 
       std::vector<gind> nds(2*ncn);
+      std::vector<gind> trinodes1(3);
+      std::vector<gind> trinodes2(3);
       arma::vec3 elnorm;
       if(dim == 1){
 	elnorm = El1DNormal(cn,nodes,n_planar);
@@ -869,8 +1129,28 @@ InsertBLElements(element_set& elements,
 	  //std::cout << "symmetry ent: " << entity << std::endl;
 	}
 	//int entity = 9;
+	trinodes1 = {nds[0],nds[1],nds[2]};
+	trinodes2 = {nds[1],nds[3],nds[2]};
+	arma::mat ideal1(3,3);
+	arma::mat ideal2(3,3);
+	for(int i = 0; i < 3; i++){
+	  ideal1.col(i) = nodes.at(trinodes1[i])->xyzvec3();
+	  ideal2.col(i) = nodes.at(trinodes2[i])->xyzvec3();
+	}
+	
+	/*
+	ret = elements.insert(elementFactory::Instance()->
+			      CreateElement(2,trinodes1,0,1,bc_tag,entity,1));
+	ret.first->get()->setIsBL(true);
+	idealElements[(*ret.first).get()] = ideal1;
+	ret = elements.insert(elementFactory::Instance()->
+			      CreateElement(2,trinodes2,0,1,bc_tag,entity,1));
+	ret.first->get()->setIsBL(true);
+	idealElements[(*ret.first).get()] = ideal2;
+	*/
 	ret = elements.insert(elementFactory::Instance()->
 			      CreateElement(3,nds,0,1,bc_tag,entity,1)); // entity is a hack!
+	
       }
       else if(type == 2){ // Tri to Prism
 	ret = elements.insert(elementFactory::Instance()->
@@ -883,8 +1163,11 @@ InsertBLElements(element_set& elements,
       assert(ideal.n_cols == idealExtrude.n_cols);
       //std::cout << idealExtrude << std::endl;
 
-      idealElements[(*ret.first).get()] = ideal;
+      //idealElements[(*ret.first).get()] = ideal;
       //idealElements[(*ret.first).get()] = idealExtrude;
+
+      if(dim == mesh.Dimension()-1) 
+	idealElements[(*ret.first).get()] = idealExtrude;
 
       //if(dim == mesh.Dimension()-2) idealElements[(*ret.first).get()] = ideal;
       //else idealElements[(*ret.first).get()] = idealExtrude;
@@ -942,8 +1225,96 @@ InsertBLElements(element_set& elements,
   }
 }
 
+double BoundaryLayerGenerator::computeMinElDist(const MEl* el){
+  node_map& nodes = mesh.getNodesNC();
+  int type = el->getElementType();
+  int order = el->getOrder();
+  
+  double min_dist = 1.0/0.0;
+
+  const gind* elnodes = el->getNodes();
+  
+  const NodeIndexer* indexer = index_factory.getNodeIndexer(type,order);
+  for(int ch = 0; ch < el->NumChildren(); ch++){
+    const std::vector<indtype>& child_nodes = indexer->getChildNodes(ch);
+    int cnodes[4];
+    for(int i = 0; i < child_nodes.size(); i++){
+      cnodes[i] = elnodes[child_nodes[i]];
+    }
+    int other_node;
+    for(int i = 0; i < el->NumNodes(); i++){
+      bool found = false;
+      for(int j = 0; j < child_nodes.size(); j++){
+	if(elnodes[i] == elnodes[child_nodes[j]]) found = true;
+      }
+      if(!found) other_node = elnodes[i];
+    }
+    
+    arma::vec3 normal;
+    if(type == 2 || type == 3){
+      normal = El1DNormal(cnodes,nodes,{0,0,1});
+    }
+    else if(el->getElementType() == 4){
+      normal = El2DNormal(cnodes,nodes);
+    }
+    else{
+      throw std::runtime_error("Unsupported element type of "+
+			     std::to_string(type));
+    }
+
+    for(int i = 0; i < child_nodes.size(); i++){
+      arma::vec3 r = nodes.at(other_node)->xyzvec3() - 
+	nodes.at(elnodes[child_nodes[i]])->xyzvec3();
+   
+      double dist = std::fabs(dot(r,normal));
+      min_dist = std::min(min_dist,dist);
+    }
+  }
+  return min_dist;
+}
+
 std::vector<double> BoundaryLayerGenerator::
 getMaximumSafeExtrusionDistance(int safety_factor){
+  
+ std::vector<std::set<MEl*> > node2elements(normal_map.size());
+  
+ element_set& elements = mesh.getElementsNC();
+ 
+ for(auto it = elements.begin(); it != elements.end(); ++it){
+   MEl* el = it->get();
+   
+    const gind* elnodes = el->getNodes();
+
+    for(int i = 0; i < el->NumNodes(); i++){
+      if(newnode_map.find(elnodes[i]) != newnode_map.end()){
+	int nd = newnode_map[elnodes[i]];
+	node2elements[nd-NNorig].insert(el);
+      }
+    }
+  }
+
+  std::cout << "before newnode_map loop" << std::endl;
+
+  node_map& nodes = mesh.getNodesNC();
+  
+  std::vector<double> max_dist(normal_map.size(),1.0/0.0);
+
+  for(auto it = newnode_map.begin(); it != newnode_map.end(); ++it){
+    int bl_node = it->second-NNorig;
+    const std::set<MEl*>& node_elements = node2elements[bl_node];
+
+    
+    for(auto it = node_elements.begin(); it != node_elements.end(); ++it){
+      const MEl* el = *it;
+      //double min_el_dist = 0.01;
+      double min_el_dist = 1.0/safety_factor*computeMinElDist(el);
+      max_dist[bl_node] = std::min(max_dist[bl_node],min_el_dist);
+    }
+    
+  }
+  return max_dist;
+  
+  /*
   const element_set& elements = mesh.getElements();
   //std::cout << "sizeof set: " << sizeof(std::set<int>) << std::endl;
 
@@ -994,6 +1365,8 @@ getMaximumSafeExtrusionDistance(int safety_factor){
 
 
   return max_dist;
+  */
+
 }
 
 int BoundaryLayerGenerator::SubDivideBL(){

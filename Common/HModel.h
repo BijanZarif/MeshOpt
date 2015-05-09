@@ -28,7 +28,7 @@ class elementFactory;
 class nodeFactory;
 
 //class GMSHReader;
-class MeshReader;
+class GMSHReader;
 class GeometryReader;
 class MeshOptConfig;
 class BoundaryLayerGenerator;
@@ -57,7 +57,7 @@ class HModel{
 
   nodeFactory *node_factory;
 
-  std::unique_ptr<MeshReader> mesh_reader;
+  std::unique_ptr<GMSHReader> mesh_reader;
   std::unique_ptr<GeometryReader> geometry_reader;
   std::shared_ptr<MeshOptConfig> mesh_opt_config;
   std::shared_ptr<BoundaryLayerGenerator> bl_generator;

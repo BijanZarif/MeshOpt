@@ -1,5 +1,7 @@
 #include "BoundaryLayer.h"
 #include "SubmeshOptimizer.h"
+#include "IdealElement.h"
+#include "NewMeshOptimizer.h"
 //#include "OptElManager.h"
 #include "MeshContainer.h"
 #include "GlobalMeshOptimizer.h"
@@ -20,9 +22,11 @@ int BoundaryLayerGenerator::OptimizeBL(){
 
   //ShapeFunctionMatricesFactory sf_factory;
 
-  
+  std::cout << "in optimize BL" << std::endl;
+
   OptElManager optel_manager(mesh.getNodesNC(),geometry,
-			     sf_factory,index_factory);
+			     sf_factory,index_factory,
+			     mesh.getNodeSpacingType(),mesh.Dimension());
 
 
 
@@ -53,31 +57,57 @@ int BoundaryLayerGenerator::OptimizeBL(){
   }
   */
 
-
+  
   //SubmeshOptimizer mesh_optimizer(mesh,optel_manager,ideal_elements,
   //				  2);  
   //mesh_optimizer.Optimize(1.0,{0,0,1,0},symmetry_faces);
 
-  SubmeshOptimizer mesh_optimizer(mesh,optel_manager,ideal_elements,
-   				  mesh.Dimension()); 
+  
+  
+  NewMeshOptimizer new_mesh_optimizer(mesh,optel_manager,ideal_elements,
+				      mesh.Dimension());
+
+  
+  new_mesh_optimizer.setNodeDimToOpt(2);
+  new_mesh_optimizer.setNodeDimToOpt(3);
+  //new_mesh_optimizer.setNodeDimToOpt(mesh.Dimension());
+  new_mesh_optimizer.Optimize();
+  
+
+  
+  /*
+   SubmeshOptimizer mesh_optimizer(mesh,optel_manager,ideal_elements,
+    				  mesh.Dimension()); 
+
+  
+   double max_distortion = 1.05;
 
   if(mesh.Dimension() == 3){
-    mesh_optimizer.Optimize(1.2,{0,0,1,1},symmetry_faces,clamped_nodes);
+    mesh_optimizer.Optimize(max_distortion,{0,0,1,1},
+			    symmetry_faces,clamped_nodes);
   }
   else{
-    mesh_optimizer.Optimize(1.2,{0,0,1,0});
+    mesh_optimizer.Optimize(max_distortion,{0,0,1,0},
+			    std::set<short unsigned int>(),
+			    clamped_nodes);
   }
+  */
+
   /*
-  for(int dim = 3; dim <= mesh.Dimension(); dim++){
+  for(int dim = 2; dim <= mesh.Dimension()-1; dim++){
+
+    SubmeshOptimizer mesh_optimizer(mesh,optel_manager,ideal_elements,
+				    mesh.Dimension()); 
 
     std::vector<bool> to_opt(4,false);
     to_opt[dim] = true;
-    to_opt[2] = true;
+    //to_opt[2] = true;
     //to_opt[2] = true;
     //to_opt[2] = true;
 
     
-    mesh_optimizer.Optimize(1.2,to_opt,mesh.SymmetrySurface());
+    mesh_optimizer.Optimize(1.2,to_opt,std::set<short unsigned int>(),
+			    clamped_nodes);
  
     //to_opt[3] = false;
     //to_opt[2] = true;
@@ -88,6 +118,7 @@ int BoundaryLayerGenerator::OptimizeBL(){
     //mesh_optimizer.Optimize(1.2,to_opt);
   }
   */
+
   //mesh_optimizer.Optimize(0.9,{false,false,true,false});
   //mesh_optimizer.Optimize(1.2,{false,false,false,true});
   //std::vector<bool> to_opt(4,false);

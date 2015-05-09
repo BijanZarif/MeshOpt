@@ -13,6 +13,8 @@ class HighOrderParameterList: public MyParameterList{
 
   bool useOptimizedPoints = 0;
     
+  bool OptimizedNodeSpacing = false;
+
  private:
   std::set<std::string> GetValidParameters() const;
   void Populate(const parameter_map_type& pmap);

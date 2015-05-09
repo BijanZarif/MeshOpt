@@ -1,17 +1,22 @@
 SET(S
-  MeshOptimizer.cpp
-#  GlobalMeshOptimizer.cpp
-  SubmeshOptimizer.cpp
-  LocalMeshMeritEvaluator.cpp
-  SubmeshMeritEvaluator.cpp
+  LBFGSOptimizer.cpp
+  DenseNewtonOptimizer.cpp
+  #NewtonOptimizer.cpp
 )
 
 SET(H
-  MeshOptimizer.h
-#  GlobalMeshOptimizer.h
-  SubmeshOptimizer.h
-  LocalMeshMeritEvaluator.h
-  SubmeshMeritEvaluator.h
+  Optimizer.h
+  LBFGSOptimizer.h
+  DenseNewtonOptimizer.h
+  #NewtonOptimizer.h
 )
 
-append_src(S H)
+add_library(Optimization ${S} ${H})
+target_include_directories(Optimization PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(Optimization_INC ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+
+install(TARGETS Optimization DESTINATION lib)
+install(FILES ${H} DESTINATION include)
+
+#append_src(S H)

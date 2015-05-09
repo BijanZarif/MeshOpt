@@ -45,6 +45,7 @@ class BoundaryLayerGenerator{
   std::map<const MEl*,arma::mat> ideal_elements;
   std::set<unsigned short int> symmetry_faces;
 
+ 
   int NNorig;
 
   NodeIndexFactory index_factory;
@@ -107,6 +108,11 @@ class BoundaryLayerGenerator{
 				 const double dist,
 				 arma::vec& params,
 				 arma::vec3& xyz);
+  
+  int setClampedNodes();
+
+  double computeMinElDist(const MEl* el);
+
  protected:
 
  public:
@@ -124,6 +130,8 @@ class BoundaryLayerGenerator{
   std::map<const MEl*,arma::mat>& getIdealElements(){ return ideal_elements; }
 
   std::unordered_set<int> clamped_nodes;
+
+  std::vector<MEl*> bl_elements;
 
   const normal_map_type& getNormalMap() { return normal_map; }
   

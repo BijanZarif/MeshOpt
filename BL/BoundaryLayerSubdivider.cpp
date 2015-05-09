@@ -42,7 +42,8 @@ int BoundaryLayerSubdivider::GenerateElements(){
 
   int order = (*mesh.getElements().begin())->getOrder();
   
-  arma::mat interp_curr = line_points_computer.ComputePoints(order,0);
+  int interp_type = mesh.getNodeSpacingType();
+  arma::mat interp_curr = line_points_computer.ComputePoints(order,interp_type);
 
   std::cout << interp_curr << std::endl;
 
@@ -50,7 +51,7 @@ int BoundaryLayerSubdivider::GenerateElements(){
   
   arma::mat blpts(Nblpts_ho,1);
   
-  NodeInterpolator node_interpolator(0);
+  NodeInterpolator node_interpolator(interp_type);
   const arma::mat& lin_interp = 
     node_interpolator.getNodeInterpolationMatrix(1,1,order);
 
