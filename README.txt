@@ -14,11 +14,14 @@ Currently, the only supported geometry format is *.stp. The geometry used to
 generate the GMSH mesh must be composed of closed surfaces.
 
 DEPENDANCIES:
-The following open-source libraries are required:
-a) Boost -- www.boost.org
-b) libLBFGS -- http://www.chokkan.org/software/liblbfgs/
-c) BLAS -- eg. OpenBLAS https://github.com/xianyi/OpenBLAS
-d) Armadillo (wrapper or BLAS) -- http://arma.sourceforge.net/
+The following open-source libraries are required and will be automatically installed if not privided as arguments to CMake:
+a) BLAS -- eg. OpenBLAS https://github.com/xianyi/OpenBLAS/
+b) Armadillo (wrapper or BLAS) -- http://arma.sourceforge.net/
+c) libLBFGS -- http://www.chokkan.org/software/liblbfgs/
+
+
+OpenCASCADE is required to run MeshOpt. Since it is a large library, it is not packaged with this software. The user must point to the OpenCascade install root using the OCC_ROOT CMake variable. 
+
 
 ### 2.0 INSTALLATION
 A simple installation script is provided in the directory Demo. Essentially, 
