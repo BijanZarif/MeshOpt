@@ -48,7 +48,7 @@ int NewMeshOptimizer::Optimize(){
     OptimizeSubmesh();
     merit_old = merit;
     merit = ComputeGlobalMerit();
-    double diff = (merit_old-merit)/merit;
+    double diff = (merit_old-merit)/merit_old;
     PlotOptimizationProgress(iter,active_nodes.size(),merit/merit0,diff,
 			     GetMinQuality(),min_detJ);
     

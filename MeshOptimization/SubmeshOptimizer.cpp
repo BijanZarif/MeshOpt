@@ -248,7 +248,7 @@ int SubmeshOptimizer::Optimize(double threshold, std::vector<bool> to_opt,
     
     //OptimizeGlobal(threshold,2,-1,1.0e0);
     //cout << "Merit" << Merit << endl;
-    double diff = std::abs(Merit_old-Merit)/Merit;
+    double diff = std::abs(Merit_old-Merit)/Merit_old;
     double min_quality = minMeshQuality();
     PlotOptimizationProgress(i,activenodes.size(),Merit/merit0,diff,
 			     min_quality,minMeshDetJ());
