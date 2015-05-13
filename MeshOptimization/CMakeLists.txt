@@ -7,6 +7,7 @@ SET(S
   SubmeshMeritEvaluator.cpp
   SubmeshMeritEvaluator2.cpp
   IdealElement.cpp
+  PlotOptimizationProgress.cpp
 )
 
 SET(H
@@ -18,6 +19,7 @@ SET(H
   SubmeshMeritEvaluator.h
   SubmeshMeritEvaluator2.h
   IdealElement.h
+  PlotOptimizationProgress.h
 )
 
 append_src(S H)

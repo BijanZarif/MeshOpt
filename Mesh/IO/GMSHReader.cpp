@@ -434,7 +434,7 @@ int fixPyramidOrientation(MeshContainer& mesh){
 };
 
 int fix2DNormals(MeshContainer& mesh){
-  std::cout << "in fix 2D normals" << std::endl;
+  //std::cout << "in fix 2D normals" << std::endl;
 
   element_set& elements = mesh.getElementsNC();
   const node_map& nodes_map = mesh.getNodes();
@@ -540,7 +540,7 @@ int readGMSHNodes(MeshContainer& mesh, ifstream &fname){
     std::string error ="$ParametricNodes must be followed by $ParametricNodes!";
     throw std::runtime_error(error);
   }
-  std::cout << "After reading nodes" << std::endl;
+  //std::cout << "After reading nodes" << std::endl;
 
   return true;
 }
@@ -594,7 +594,7 @@ int readGMSHElements(MeshContainer& mesh, ifstream &fname,
 	//for(int i=0; i<ntags; i++) tags[i]-=1;
 	tags[1]-= 1;
 	//if(el_dim[eltype] > 2) tags[1] = -1;
-	if(tags[0] == 20) mesh.SetSymmetrySurface(tags[1]);
+	//if(tags[0] == 20) mesh.SetSymmetrySurface(tags[1]);
 
 
 	//std::cout << "eltype: " << eltype << std::endl;
@@ -771,7 +771,7 @@ void GMSHReader::ReadMesh(MeshContainer& mesh, std::string filename){
     //****************** Read all elements *******************//
     //readElements(fname,mesh_elements,mesh_nodes,occ_handler,sf_handler);
     readGMSHElements(mesh,fname,edge2bc_map, face2bc_map);
-    std::cout << "Time to read GMSH file: " << timer.toc() << std::endl;
+    //std::cout << "Time to read GMSH file: " << timer.toc() << std::endl;
 
     fname.close();
 

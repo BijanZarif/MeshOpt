@@ -15,8 +15,8 @@
 #include <iostream>
 
 int BoundaryLayerSubdivider::GenerateElements(){
-  BLMesh bl_mesh(mesh);
-  std::cout << "N blnodes: " << bl_mesh.blnodes.size() << std::endl;
+  BLMesh bl_mesh(mesh,bl_parameters->BLSurfID,bl_parameters->BLTermID);
+  //std::cout << "N blnodes: " << bl_mesh.blnodes.size() << std::endl;
 
   int Nblnodes = bl_mesh.blnodes.size();
   
@@ -45,7 +45,7 @@ int BoundaryLayerSubdivider::GenerateElements(){
   int interp_type = mesh.getNodeSpacingType();
   arma::mat interp_curr = line_points_computer.ComputePoints(order,interp_type);
 
-  std::cout << interp_curr << std::endl;
+  //std::cout << interp_curr << std::endl;
 
   int Nblpts_ho = NLayers+1 + NLayers*(order-1);
   
@@ -64,7 +64,7 @@ int BoundaryLayerSubdivider::GenerateElements(){
   }
   //for(int i = 0; i <=NLayers; i++) blpts[i] = spacing[i];
   
-  std::cout << blpts << std::endl;
+  //std::cout << blpts << std::endl;
 
   arma::mat A, f;
   arma::cube dA, df;

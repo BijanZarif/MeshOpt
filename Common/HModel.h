@@ -84,7 +84,7 @@ class HModel{
 
   int readMesh(void);
   int ReadGeometry(void);
-  int WriteMesh(std::string filename, std::string format);
+  int WriteMesh(std::string format);
   int PrepareMesh();
 
   //int readGMSH(void);

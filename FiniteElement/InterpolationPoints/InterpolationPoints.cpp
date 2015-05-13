@@ -450,7 +450,6 @@ arma::mat ElectrostaticTetPts(int p){
 
 arma::mat LinePoints::ComputePoints(const int p, const int type) const{
   if(type == 0){ // Uniform
-    std::cout << "creating uniform line points!" << std::endl;
     return arma::linspace(0.0,1.0,p+1);
   }
   else if(type == 1){ // Jacobi roots
@@ -465,15 +464,12 @@ arma::mat LinePoints::ComputePoints(const int p, const int type) const{
 
 arma::mat TriPoints::ComputePoints(const int p, const int type) const{
   if(type == 0){ // Uniform
-    std::cout << "Creating uniform tri pts..." << std::endl;
     return UniformTriPts(p);
   }
   else if(type == 1){ // Electrostatic
-    std::cout << "Creating electrostatic tri pts..." << std::endl;
     return ElectrostaticTriPts(p);
   }
   else if(type == 2){ // Electristatic Tet
-    std::cout << "Creating electrostatic tet tri pts..." << std::endl;
     TetPoints Tet;
     arma::mat pts = Tet.ComputePoints(p,1);
     pts.resize((p+1)*(p+2)/2,2);
@@ -484,11 +480,9 @@ arma::mat TriPoints::ComputePoints(const int p, const int type) const{
 
 arma::mat QuadPoints::ComputePoints(const int p, const int type) const{
   if(type == 0){ // Uniform
-    std::cout << "creating uniform quad points!" << std::endl;
     return UniformQuadPts(p);
   }
   else if(type == 1){ // Electrostatic
-    std::cout << "creating optimal quad points!" << std::endl;
     return JacobiQuadPts(p);
   }
   else assert(type);
@@ -497,11 +491,9 @@ arma::mat QuadPoints::ComputePoints(const int p, const int type) const{
 
 arma::mat TetPoints::ComputePoints(const int p, const int type) const{
   if(type == 0){ // Uniform
-    std::cout << "Creating uniform tet pts..." << std::endl;
     return UniformTetPts(p);
   }
   else if(type == 1){ // Electrostatic
-    std::cout << "Creating optimal tet pts..." << std::endl;
     return ElectrostaticTetPts(p);
   }
   else assert(type);
@@ -561,7 +553,7 @@ arma::mat PrismPoints::ComputePoints(const int p, const int type) const{
 }
 
 arma::mat PyramidPoints::ComputePoints(const int p, const int type) const{
-  std::cout << "Begeinning pyramid points" << std::endl;
+
   int dofpyramid = (p+1)*(p+2)*(2*(p+1)+1)/6;
   arma::mat pts(dofpyramid,3);
   if(type == 0){
@@ -580,7 +572,7 @@ arma::mat PyramidPoints::ComputePoints(const int p, const int type) const{
   else{
     throw std::runtime_error("Optimal node distribution not yet implemented for Pyramid!");
   }
-  std::cout << "End pyramid points" << std::endl;
+
   return pts;
 
 }

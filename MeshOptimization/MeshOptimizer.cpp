@@ -15,7 +15,7 @@ MeshOptimizer::MeshOptimizer(MeshContainer& mesh,
   //  std::cout << el->first->getDim() << std::endl;
   //}
   arma::mat gradMerit;
-  std::cout << "initial ideal size: " << idealElements.size() << std::endl;
+  //std::cout << "initial ideal size: " << idealElements.size() << std::endl;
   
   //const ideal_map& idealElements = mesh.getIdealElements();
   //std::map<MEl*, double>& all_merits = mesh.getAllMeritsNC();
@@ -32,14 +32,14 @@ MeshOptimizer::MeshOptimizer(MeshContainer& mesh,
     assert(all_merits.size() > idealElements.size());
   }
 
-  std::cout << "All merits size: " << all_merits.size() << std::endl;
+  //std::cout << "All merits size: " << all_merits.size() << std::endl;
 }
 
 std::map<gind,std::vector<const MEl*> > MeshOptimizer::
 CreateNode2ElementList(const std::unordered_set<const MEl*>& watch,
 		       const std::map<gind,gind>& activenodes){
 
-  std::cout << "node2Element begin" << std::endl;
+  //std::cout << "node2Element begin" << std::endl;
   std::map<gind,std::vector<const MEl*> > Node2ElementList;
 
   std::vector<std::vector<int> > quad_nodes = {
@@ -98,7 +98,7 @@ CreateNode2ElementList(const std::unordered_set<const MEl*>& watch,
     }
   }
 
-  std::cout << "end node2ElementList" << std::endl;
+  //std::cout << "end node2ElementList" << std::endl;
   return Node2ElementList;
 }
 
@@ -187,7 +187,7 @@ FindActiveElements(std::unordered_set<const MEl*>& watch,
   //std::cout << "threshold: " << threshold << std::endl;
   //std::cout << "type to find: " << type_to_find << std::endl;
   //std::cout << "type to exclude: " << type_to_exclude << std::endl;
-  std::cout << "el dim to opt: " << el_dim_to_opt << std::endl;
+  //std::cout << "el dim to opt: " << el_dim_to_opt << std::endl;
   for(auto el = all_merits.begin(); el != all_merits.end(); ++el){
     if(el->first->getDim() == el_dim_to_opt){
       //std::cout << el->second << " " << threshold << std::endl;

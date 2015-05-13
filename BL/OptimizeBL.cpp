@@ -5,24 +5,19 @@
 //#include "OptElManager.h"
 #include "MeshContainer.h"
 #include "GlobalMeshOptimizer.h"
+#include "BLParameterList.h"
 
-
-//#include "ShapeFunctionMatrices.h"
-//#include "MeshContainer.h"
-//#include "NodeIndexer.h"
-//#include "ActiveMEl.h"
-//#include "OptEl.h"
-//#include "ShapeFunctionMatrices.h"
-//#include <lbfgs.h>
 
 
 int BoundaryLayerGenerator::OptimizeBL(){
+
+  std::cout << "Optimizing linear boundary layer..." << std::endl;
 
   using namespace std;
 
   //ShapeFunctionMatricesFactory sf_factory;
 
-  std::cout << "in optimize BL" << std::endl;
+
 
   OptElManager optel_manager(mesh.getNodesNC(),geometry,
 			     sf_factory,index_factory,
@@ -39,7 +34,7 @@ int BoundaryLayerGenerator::OptimizeBL(){
 
   //LocalMeshMeritEvaluator merit_evaluator(
   //LBFGSOptimizer lbfgs_optimizer(merit_evaluator);
-  cout << "after mesh_optimizer constructor" << endl;
+  //cout << "after mesh_optimizer constructor" << endl;
 
 
   /*
@@ -70,6 +65,8 @@ int BoundaryLayerGenerator::OptimizeBL(){
   
   new_mesh_optimizer.setNodeDimToOpt(2);
   new_mesh_optimizer.setNodeDimToOpt(3);
+  new_mesh_optimizer.setMaxIts(bl_parameters->MaxBLGenIters);
+
   //new_mesh_optimizer.setNodeDimToOpt(mesh.Dimension());
   new_mesh_optimizer.Optimize();
   

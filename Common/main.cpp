@@ -19,16 +19,10 @@ int main(int argc, char ** argv){
   //unique_ptr<HModel> hmodel(new HModel);  
   HModel hmodel;
 
-  //omp_set_num_threads(1);
-
-  hmodel._optimal = false;
-  //hmodel._optimal = true;
-
  
 
 
   try{
-    //hmodel->parseCommandLineOptions(argc,argv);
     hmodel.parseCommandLineOptions(argc,argv);    
   }
   catch(std::exception& e){
@@ -39,7 +33,7 @@ int main(int argc, char ** argv){
  
   //hmodel->readOCC();
   hmodel.ReadGeometry();
-  cout << "after reading occ" << endl;
+
   try{
     //hmodel->readGMSH();
     hmodel.readMesh();
@@ -48,7 +42,6 @@ int main(int argc, char ** argv){
     cout << "std::runtime error thrown: " << e.what() << endl;
     return 1;
   }
-  cout << "after reading GMSH" << endl;
   
   hmodel.generateBL();
 
@@ -57,7 +50,7 @@ int main(int argc, char ** argv){
   hmodel.MeshHighOrder();
 
     
-  hmodel.WriteMesh("blmesh.msh","GMSH");
+  hmodel.WriteMesh("GMSH");
   
  
 

@@ -118,9 +118,9 @@ class BoundaryLayerGenerator{
  public:
  BoundaryLayerGenerator(MeshContainer& mesh_t, GeometryContainer& geometry_t,
 			ShapeFunctionMatricesFactory& sf_factory_t,
-			std::shared_ptr<BLParameterList>& bl_parameters): 
-  mesh(mesh_t), geometry(geometry_t), sf_factory(sf_factory_t),
-    bl_parameters(bl_parameters){}
+			std::shared_ptr<BLParameterList>& bl_parameters);
+
+
 
   int GenerateBL();
   int OptimizeBL();

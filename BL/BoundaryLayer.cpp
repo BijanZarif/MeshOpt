@@ -22,48 +22,60 @@
 
 #include <assert.h>
 
+BoundaryLayerGenerator::
+BoundaryLayerGenerator(MeshContainer& mesh_t, 
+		       GeometryContainer& geometry_t,
+		       ShapeFunctionMatricesFactory& sf_factory_t,
+		       std::shared_ptr<BLParameterList>& bl_parameters): 
+  mesh(mesh_t), geometry(geometry_t), sf_factory(sf_factory_t),
+  bl_parameters(bl_parameters){
+  /*
+  int dim = mesh.getDimension();
+  for(auto it = mesh.getElements.begin(); it != mesh.getElments.end(); ++it){
+    int type = it->getElementType();
+    if(dim == 2){
+      if(type == 3) has_b
+    }
+    else{
+
+    }
+  }
+  */
+}
+
 int BoundaryLayerGenerator::GenerateBL(){
  
+  std::cout << "Generating Linear Boundary Layer elements..." << std::endl;
+
   double thickness = bl_parameters->thickness;
   //int Nlayers = bl_parameters->NLayers;
   int Nlayers = 1;
   double factor = 1;
-  const double safety_factor = 4;
+  const double safety_factor = 2;
   const double max_normal_thickness_factor = 20;
 
-  std::cout << "h0" << std::endl;
 
   findSymmetryFaces();
 
-  std::cout << "h1" << std::endl;
 
   bl_elements = FindBLElements(mesh.getSubElements());
 
   if(bl_elements.size() == 0) return 1;
 
-  std::cout << "h2" << std::endl;
 
   // Get node normals
-  //normal_map_type normal_map = CreateNodeInfoMap(bl_elements);
- 
   normal_map = CreateNodeInfoMap(bl_elements,thickness);
 
-  std::cout << "h3" << std::endl;
 
   // Map original nodes to new nodes
   newnode_map = CreateNewNodeMap(normal_map);
 
-  std::cout << "h4" << std::endl;
 
   //setClampedNodes();
-  std::cout << "clamped nodes size: " << clamped_nodes.size() << std::endl;
-
-  std::cout << "h5" << std::endl;
 
   std::vector<double> max_extrude = 
     getMaximumSafeExtrusionDistance(safety_factor);
 
-  std::cout << "h6" << std::endl;
 
   std::vector<double> extrusion_dist = max_extrude;
   for(auto it = extrusion_dist.begin(); it != extrusion_dist.end(); ++it){
@@ -86,15 +98,13 @@ int BoundaryLayerGenerator::GenerateBL(){
  
  // Insert the BL nodes
   InsertBLNodes(1,extrusion_dist);
-  std::cout << "before insert BL nodes" << std::endl;
+
   //InsertBLNodes(normal_map,Nlayers,thickness,1);
-  std::cout << "after insert BL nodes" << std::endl;
+
 
   //ResetBLNodes(1,extrusion_dist);
 
  //ReplaceSymmetryElements(newnode_map,normal_map,Nlayers);
-
- cout << "symmetry elements size: " << symmetry_elements.size() << endl;
 
  // Insert the BL elements
  InsertBLElements(mesh.getElementsNC(),bl_elements,Nlayers,thickness);
@@ -108,10 +118,7 @@ int BoundaryLayerGenerator::GenerateBL(){
  //InsertBLNodes(normal_map,Nlayers,thickness,factor,max_extrude);
  //ResetBLNodes(normal_map,newnode_map,Nlayers,thickness,factor);
  
- for(auto nd = mesh.getNodes().begin(); nd != mesh.getNodes().end(); ++nd){
-   //std::cout << nd->second->getGeoEntity() << std::endl;
- }
- std::cout << "At end of genereate BL" << std::endl;
+
 
   return 1;
 
@@ -139,7 +146,8 @@ int BoundaryLayerGenerator::findSymmetryFaces(){
     auto& subelements = mesh.getSubElements();
     for(auto it = subelements.begin(); it != subelements.end(); ++it){
       const MEl* el = it->get();
-      if(el->getBCTag() == 20) symmetry_faces.insert(el->getGeoEntity());
+      if(el->getBCTag() == bl_parameters->BLTermID) 
+	symmetry_faces.insert(el->getGeoEntity());
     }
   }
   return 0;
@@ -170,7 +178,6 @@ SmoothField(double Nsmooth, const std::vector<MEl*>& bl_elements,
 
 int BoundaryLayerGenerator::setClampedNodes(){
   
-  std::cout << "before set clamped nodes" << std::endl;
   
   std::vector<std::set<MEl*> > node2elements(normal_map.size());
   
@@ -186,7 +193,6 @@ int BoundaryLayerGenerator::setClampedNodes(){
     }
   }
 
-  std::cout << "before newnode_map loop" << std::endl;
 
   node_map& nodes = mesh.getNodesNC();
   
@@ -226,7 +232,7 @@ int BoundaryLayerGenerator::setClampedNodes(){
     
     clamped_nodes.insert(it->second);
   }
-  std::cout << "size of clamped nodes: " << clamped_nodes.size() << std::endl;
+  //std::cout << "size of clamped nodes: " << clamped_nodes.size() << std::endl;
   
 
   /*
@@ -318,7 +324,7 @@ FindBLElements(const element_set& elements){
   std::vector<MEl*> bl_elements;
   for(auto el = elements.begin(); el != elements.end(); ++el){
     const int bc_tag = (*el)->getBCTag();
-    if(bc_tag == 7){
+    if(bc_tag == bl_parameters->BLSurfID){
       //if(bc_tag >= 10 && bc_tag < 20){
       bl_elements.push_back(el->get());
     }
@@ -330,7 +336,7 @@ std::vector<MEl*> BoundaryLayerGenerator::MakeSymmetryLineElements(){
   std::vector<MEl*> line_elements;
   ChildGenerator child_generator;
   for(auto el = elements.begin(); el != elements.end(); ++el){
-    if((*el)->getBCTag() == 20){
+    if((*el)->getBCTag() == bl_parameters->BLTermID){
       std::vector<unique_element_ptr>& childels = 
 	child_generator.GenerateChildren(*el);
       for(auto ch = childels.begin(); ch != childels.end(); ++ch){
@@ -377,7 +383,7 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
   }
 
   normal_map_type normal_map;
-  /*
+  
   for(auto el = bl_elements.begin(); el != bl_elements.end(); ++el){
     const gind* cn = (*el)->getCornerNodes();
     arma::vec3 n;
@@ -420,8 +426,9 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
   for(auto nd = normal_map.begin(); nd != normal_map.end(); ++nd){
     nd->second.normal/=arma::norm(nd->second.normal,2.0);
   }
-  */
   
+  
+  /*
   for(auto el = bl_elements.begin(); el != bl_elements.end(); ++el){
     const gind* cn = (*el)->getCornerNodes();
     //const gind elnodes = (*el)->getNodes();
@@ -531,6 +538,8 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
     else{
       cout << "dimension is > 2!" << endl;
     }
+  
+
     //for(int i = 0; i < 1; i++){
     for(int i=0; i<(*el)->numCornerNodes(); i++){
       const int node_dim = nodes.at(cn[i])->getType();
@@ -560,7 +569,8 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
   for(auto nd = normal_map.begin(); nd != normal_map.end(); ++nd){
     nd->second.normal/=arma::norm(nd->second.normal,2.0);
   }
-  
+  */
+
   if(mesh_dim != 3) return normal_map;
 
 
@@ -574,10 +584,6 @@ CreateNodeInfoMap(const std::vector<MEl*>& bl_elements,
 
   //const int symmetry_surf = mesh.SymmetrySurface();
   arma::vec3 symmetry_normal = {0.0, 1.0, 0.0};
-  for(auto it = Vertex2FacesMap.begin(); it != Vertex2FacesMap.end(); ++it){
-    std::cout << it->first << std::endl;
-  }
-  std::cout << std::endl;
 
 
   for(auto nd = normal_map.begin(); nd != normal_map.end(); ++nd){
@@ -654,7 +660,7 @@ ReplaceSymmetryElements(const std::map<gind,gind>& newnode_map,
 
   for(auto el = subelements.begin(); el != subelements.end(); ){
     bool found = false;
-    if((*el)->getBCTag() == 20){
+    if((*el)->getBCTag() == bl_parameters->BLTermID){
       const int ncn = (*el)->numCornerNodes();
       const gind* cn = (*el)->getCornerNodes();
       gind newnodes[ncn];
@@ -1292,8 +1298,6 @@ getMaximumSafeExtrusionDistance(int safety_factor){
       }
     }
   }
-
-  std::cout << "before newnode_map loop" << std::endl;
 
   node_map& nodes = mesh.getNodesNC();
   

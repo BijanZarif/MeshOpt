@@ -31,9 +31,10 @@ static inline std::string &trim(std::string &s) {
 
 bool ConfigFileReader::IgnoreLine(std::string line){
   
-  if(line.length() == 0 || line[0] == '/' || line[0] == '#') return true;
+  if(line.length() == 0) return true;
   if(line.find_first_not_of(' ') == std::string::npos) return true;
   if(line.find_first_not_of('\t') == std::string::npos) return true;
+  if(line.find_first_of('#') != std::string::npos) return true;
   else return false;
 }
 

@@ -10,7 +10,7 @@ class MEl;
 
 class BLMesh{
  public:
-  BLMesh(const MeshContainer& mesh);
+  BLMesh(const MeshContainer& mesh,int BLSurfID, int BLTermID);
 
   std::map<int,int> blnodemap;
   std::vector<int> blnodes;

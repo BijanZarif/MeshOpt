@@ -9,9 +9,10 @@
 void GMSHWriter::Save(std::string filename, std::string format){
   using namespace std;
 
-  std::string name_plus_ext = filename+".msh";
+  std::string name_plus_ext = filename;
 
-  cout << "Writing Mesh" << endl;
+  cout << "\nWriting " << filename << " to disk..." << endl;
+  
   NodeIndexFactory index_factory;
 
   ofstream out(name_plus_ext.c_str());
@@ -41,9 +42,7 @@ void GMSHWriter::Save(std::string filename, std::string format){
     int type = nd->second->getType();
     //out << type << " " << type;
     int entity = nd->second->getGeoEntity();
-    if(entity == 13){
-      std::cout << "entity is 13!" << std::endl;
-    }
+
     out << type << " " << nd->second->getGeoEntity()+1;
     if(type != 3){
       for(int i = 0; i < type; i++){
@@ -117,7 +116,7 @@ void GMSHWriter::Save(std::string filename, std::string format){
   */
  
   //ShapeFunctionMatricesFactory sf_factory;
-  cout << "before writing elements" << endl;
+  //cout << "before writing elements" << endl;
 
   out << "$Elements" << endl;
   out << towrite << endl;

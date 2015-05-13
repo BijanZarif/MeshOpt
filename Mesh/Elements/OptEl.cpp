@@ -4,13 +4,14 @@
 #include "GeometryContainer.h"
 
 //double alpha = 0;
-double alpha = 1.0e-3;
+double alpha = 1.0e-4;
 #define eps_fact 1.0e12
+/*
 const double OptEl::computeGradMeritParam(arma::mat&gradMerit, 
 					  double& distortion,
 					  double factor,
 					  double minDetS,
-					  int fd_node) const{
+					  int fd_node){
 
   //std::cout << "in compute grad merit param" << std::endl;
 
@@ -92,6 +93,7 @@ const double OptEl::computeGradMeritParam(arma::mat&gradMerit,
   //gradMerit.resize(dofcnt);
   return mer;
 }
+*/
 
 double OptEl::computeGradMeritParamNode(int node, arma::vec& grad, 
 					double factor){
@@ -401,7 +403,7 @@ const double OptEl::computeMinDetJ() const{
 
 }
 
-double OptEl::computeDistortion() const{
+double OptEl::computeDistortion(){
 
 
   using std::cout;
@@ -459,7 +461,7 @@ double OptEl::computeDistortion() const{
   double eta_shap = 0.0;
   double deb = 0.0;
   double ideal_area = 0.0;
-  double min_detJ = 1.0/0.0;
+  //double min_detJ = 1.0/0.0;
   double min_detJI = 1.0/0.0;
   double min_detS = 1.0/0.0;
   double min_fronorm = 1.0/0.0;
@@ -502,8 +504,8 @@ double OptEl::computeDistortion() const{
     //if(detS < eps) delta = eps;
     //if(1) delta = std::abs(det(JI))*sqrt(alpha*alpha+alpha);
     //if(dj <= 0) delta = std::abs(det(JI))*sqrt(alpha*alpha+alpha);
-    //if(detS <= 0) delta = std::abs(det(JI))*sqrt(alpha*alpha+alpha);
-    if(detS < 0) delta = std::abs(detS)*sqrt(alpha*alpha+alpha);
+    if(detS <= 0) delta = std::abs(det(JI))*sqrt(alpha*alpha+alpha);
+    //f(detS < 0) delta = std::abs(detS)*sqrt(alpha*alpha+alpha);
     //if(detS < eps) delta = sqrt(eps*std::abs(eps-detS));
     else delta = 0.0;
     //delta = eps;
@@ -545,6 +547,7 @@ double OptEl::computeDistortion() const{
     sum_gw+= gw[i];
 
   }
+  
   //if(eta_shap!= eta_shap) cout << "Eta shap is NaN!" << endl;
   //double distortion = sqrt(eta_shap/std::abs(element_area));
   /*
@@ -612,7 +615,7 @@ const double OptEl::computeGradMerit(arma::mat& gradMerit,
 				     double& dist,
 				     double& DetS,
 				     double factor,
-				     double minDetS) const{
+				     double minDetS){
 
   //std::cout << "In compute grad merit" << std::endl;
   const ActiveMEl& active = compel.getActiveElement();
@@ -688,8 +691,8 @@ const double OptEl::computeGradMerit(arma::mat& gradMerit,
     
     const double tau = alpha*std::abs(det(JI));
     double delta = 0.0;
-    // if(detS <= 0) delta = std::abs(djI)*sqrt(alpha*alpha+alpha);
-    if(detS <= 0.0) delta = std::abs(detS)*sqrt(alpha*alpha+alpha);
+    if(detS <= 0) delta = std::abs(djI)*sqrt(alpha*alpha+alpha);
+    //if(detS <= 0.0) delta = std::abs(detS)*sqrt(alpha*alpha+alpha);
 
     const double stab =  sqrt(detS*detS + 4*delta*delta);
     const double stab_detS = detS/stab;
@@ -769,7 +772,7 @@ const double OptEl::computeGradMerit(arma::mat& gradMerit,
 
 } 
 
-const double OptEl::computeMerit(double factor) const{
+const double OptEl::computeMerit(double factor){
   return pow(factor*(computeDistortion()-1.0),2.0);
   //return computeDistortion();
   //return (computeDistortion() - 1.0);
@@ -1093,7 +1096,7 @@ const double OptEl::computeGradMerit(arma::mat& gradMerit,
 }
 */
 
-const arma::mat OptEl::computeGradMeritFD(int fd_node) const{
+const arma::mat OptEl::computeGradMeritFD(int fd_node){
   
   const ActiveMEl& active = compel.getActiveElement();
   const node_map& nodes = active.getGlobalNodes();

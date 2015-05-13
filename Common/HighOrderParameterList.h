@@ -11,7 +11,7 @@ class HighOrderParameterList: public MyParameterList{
 
   double targetMinQuality = 0.9;
 
-  bool useOptimizedPoints = 0;
+  //bool useOptimizedPoints = 0;
     
   bool OptimizedNodeSpacing = false;
 
@@ -20,5 +20,7 @@ class HighOrderParameterList: public MyParameterList{
   void Populate(const parameter_map_type& pmap);
 
   void Broadcast(){}
+
+  std::string getListName() const{ return "HighOrderParameterList"; }
 
 };

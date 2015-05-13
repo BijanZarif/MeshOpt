@@ -15,7 +15,6 @@ std::vector<double> DefaultNodeSpacingEvaluator::computeSpacing(){
   
   for(int row = 0; row < Nrows; row++){
     positions[row] = double(row)/NLayers*pow(growthRatio,row)/pow(growthRatio,NLayers);
-    std::cout << "pos: " << positions[row] << std::endl;
   }
 
   for(int nd = 0; nd < Nbl_nodes; nd++){

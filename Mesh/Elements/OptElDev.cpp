@@ -400,7 +400,7 @@ const arma::mat OptEl::computeHessianMerit() const{
 
 const double OptEl::computeHessianMeritFD(arma::mat& gradMerit, 
 					  arma::mat& HessianMerit,
-					  double& dist, double factor) const{
+					  double& dist, double factor){
   
   
   double DetS = 0.0;

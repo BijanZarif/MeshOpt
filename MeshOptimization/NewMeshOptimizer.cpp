@@ -7,6 +7,7 @@
 #include "IdealElement.h"
 #include "LBFGSOptimizer.h"
 #include "DenseNewtonOptimizer.h"
+#include "PlotOptimizationProgress.h"
 
 #include "SubmeshMeritEvaluator2.h"
 
@@ -32,13 +33,34 @@ NewMeshOptimizer(const MeshContainer& mesh,
 
 int NewMeshOptimizer::Optimize(){
   double merit0 = ComputeGlobalMerit();
-  std::cout << "merit0: " << merit0 << std::endl;
-
+  std::cout << "Initial merit: " << merit0 << std::endl;
+  double merit_old;
+  double merit = merit0;
+  PlotOptimizationHeader();
+  
+  //std::cout << "Relative merit \t # active nodes \t diff" << std::endl;
+  //std::cout << "--------------------------------------------------------\n";
+  
   for(int iter = 0; iter < MaxIts; iter++){
     SetActiveNodes();
+    if(active_nodes.size() == 0) break;
+    
     OptimizeSubmesh();
-    std::cout << "merit: " << ComputeGlobalMerit() << std::endl;
-    std::cout << "Active nodes sizes: " << active_nodes.size() << std::endl;
+    merit_old = merit;
+    merit = ComputeGlobalMerit();
+    double diff = (merit_old-merit)/merit;
+    PlotOptimizationProgress(iter,active_nodes.size(),merit/merit0,diff,
+			     GetMinQuality(),min_detJ);
+    
+    //std::cout << merit/merit0 << "\t\t" << active_nodes.size() << "\t\t" <<
+    //  diff << std::endl;
+
+    if(diff < 0.1){
+      break;
+    }
+
+    //std::cout << "merit: " <<  << std::endl;
+    //std::cout << "Active nodes sizes: " << active_nodes.size() << std::endl;
   }
 }
 
@@ -73,18 +95,28 @@ int NewMeshOptimizer::OptimizeSubmesh(){
   }
 }
 double NewMeshOptimizer::ComputeGlobalMerit(){
+  min_detJ = 1.0/0.0;
   distortions.resize(ideal_elements.size());
   double global_merit = 0.0;
   for(auto it = el2ideal.begin(); it != el2ideal.end(); ++it){
-    double dist = ComputeElementDistortion(it->first);
-    if(it->first->getOrder() > 1){
-      //if(dist > 10) std::cout << dist << std::endl;
-      //std::cout << dist << std::endl;
-    }
+    const auto& pr = ComputeElementDistortion(it->first);
+    double dist = pr.first;
     distortions[it->second] = dist;
+    min_detJ = std::min(min_detJ,pr.second);
+    
     global_merit+= std::pow(dist-1.0,2);
   }
   return global_merit;
+}
+
+double NewMeshOptimizer::GetMinQuality(){
+  double min_quality = 1.0;
+  
+  distortions.resize(ideal_elements.size());
+  for(auto it = el2ideal.begin(); it != el2ideal.end(); ++it){
+    min_quality = std::min(min_quality,1.0/distortions[it->second]);
+  }
+  return min_quality;
 }
 
 int NewMeshOptimizer::InsertIdealElement(const MEl* el){
@@ -160,16 +192,21 @@ int NewMeshOptimizer::SetActiveNodes(){
   }
 }
 
-double NewMeshOptimizer::ComputeElementDistortion(const MEl* el){
+std::pair<double,double> NewMeshOptimizer::
+ComputeElementDistortion(const MEl* el){
   const auto& ideal = ideal_elements[el2ideal[el]];
   int N = ideal->getNumSubelements();
   double distortion = 0.0;
+  double min_detJ = 1.0/0.0;
   for(int i = 0; i < N; i++){
     const auto& ideal_pair = ideal->getIdealPair(i);
     const auto& optel = 
       optel_manager.CreateOptEl(ideal_pair.first,ideal_pair.second);
+    
     distortion+= optel->computeDistortion();
+    min_detJ = std::min(min_detJ,optel->getMinDetJ());
   }
-  return distortion/N;
+  return std::make_pair(distortion/N,min_detJ);
+  //return distortion/N;
   
 }

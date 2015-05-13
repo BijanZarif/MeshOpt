@@ -22,7 +22,6 @@ GenerateAndOptimize(int order){
   
   int curr_order = (*mesh.getElements().begin())->getOrder();
 
-  std::cout << "Mesh dim: " << mesh.Dimension() << std::endl;
 
   element_set& elements = mesh.getElementsOfDim(mesh.Dimension());
   for(auto el = elements.begin(); el != elements.end(); ++el){
@@ -31,6 +30,8 @@ GenerateAndOptimize(int order){
   }
   std::shared_ptr<MeshContainer> ho_mesh;
   for(int ord = curr_order+1; ord <= order; ord++){
+    std::cout << "\nGenerating mesh of order: " << ord << std::endl;
+    
     ho_mesh = ho_mesh_generator.generateHighOrderMeshRecursive(ord);
 
     mesh = *ho_mesh;
@@ -49,6 +50,8 @@ GenerateAndOptimize(int order){
       element_set& elements = mesh.getElementsOfDim(dim);
       //element_set& elements = mesh.getElementsOfDim(mesh.Dimension());
       //std::cout <<  "element size for dim 1: " << elements.size() << std::endl;
+      std::cout << "Generating elements of dimension: " << dim << std::endl;
+      
       for(auto el = elements.begin(); el != elements.end(); ++el){
 	const MEl* element = el->get();
 	int nc = element->NumChildren();
@@ -75,27 +78,34 @@ GenerateAndOptimize(int order){
 	
       }
 
-      std::cout << "size of ideal elements: " << ideal_elements.size() << std::endl;
-      
+
+      std::cout << "Optimizing elements of dimension: " << dim << std::endl;
       SubmeshOptimizer mesh_optimizer(*ho_mesh,opt_el_manager,ideal_elements,
 				      dim);
-
+      
+      
       std::vector<bool> to_opt(4,false);
       to_opt[dim] = true;
       //to_opt[1] = true;
       mesh_optimizer.Optimize(1.05,to_opt,std::set<unsigned short int>(),
       			      std::unordered_set<int>(),true);
       
-
+      
       /*
-      NewMeshOptimizer new_mesh_optimizer(*ho_mesh,opt_el_manager,
-					  ideal_elements,
-					  mesh.Dimension());
+      if(dim == mesh.Dimension()){
+	NewMeshOptimizer new_mesh_optimizer(*ho_mesh,opt_el_manager,
+					    ideal_elements,
+					    dim);
 
-
-      new_mesh_optimizer.Optimize();
+	new_mesh_optimizer.setNodeDimToOpt(1);
+	new_mesh_optimizer.setNodeDimToOpt(2);
+	new_mesh_optimizer.setNodeDimToOpt(3);
+	new_mesh_optimizer.setMaxIts(10);
+      
+	new_mesh_optimizer.Optimize();
+      
+      }
       */
-
     }
   }
 

@@ -10,7 +10,8 @@ class SubmeshOptimizer: public MeshOptimizer{
   //const gindmap& newnode_map;
   //const std::map<MEl*, bool>& ExtrudedIdeal;
  protected:
- 
+  std::map<int,int> activenodes;
+
  public:
  SubmeshOptimizer(MeshContainer& mesh,
 		  OptElManager& optel_manager,

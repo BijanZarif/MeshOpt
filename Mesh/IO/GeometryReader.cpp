@@ -47,11 +47,11 @@ void GeometryReader::ReadGeometry(GeometryContainer& geom,std::string filename){
     }
  
   }
-  cout << "Edge2FaceMap size: " << Edge2FacesMap.size() << endl;
+  //cout << "Edge2FaceMap size: " << Edge2FacesMap.size() << endl;
   std::map<int,std::set<int> >& Vertex2FacesMap = geom.getVertex2FacesMapNC();
   std::map<int,std::set<int> >& Vertex2EdgesMap = geom.getVertex2EdgesMap();
 
-  std::cout << "vmap extent: " << geom.vmap.Extent() << std::endl;
+  //std::cout << "vmap extent: " << geom.vmap.Extent() << std::endl;
   for(int i=1; i<=geom.vmap.Extent(); i++){
     TopoDS_Vertex vx = TopoDS::Vertex(geom.vmap.FindKey(i));
     myVertices.push_back(myVertex(vx));
@@ -78,7 +78,7 @@ void GeometryReader::ReadGeometry(GeometryContainer& geom,std::string filename){
       }
     }
   }
-   cout << "Vertex2FaceMap size: " << Vertex2FacesMap.size() << endl;
+  //cout << "Vertex2FaceMap size: " << Vertex2FacesMap.size() << endl;
 
 
 }

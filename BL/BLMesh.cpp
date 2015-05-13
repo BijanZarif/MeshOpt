@@ -1,7 +1,7 @@
 #include "BLMesh.h"
 #include "MeshContainer.h"
 
-BLMesh::BLMesh(const MeshContainer& mesh){
+BLMesh::BLMesh(const MeshContainer& mesh, int BLSurfID, int BLTermID){
   const element_set& elements = mesh.getElements();
   
 
@@ -16,7 +16,7 @@ BLMesh::BLMesh(const MeshContainer& mesh){
     int symmetry_face=-1;
     for(int ch = 0; ch < el->NumChildren(); ch ++){
       const MEl* child = el->getChild(ch);
-      if(child->getBCTag() == 7){
+      if(child->getBCTag() == BLSurfID){
 	is_bl = true;
 
 	for(int nd = 0; nd < child->NumNodes(); nd++){
@@ -32,14 +32,14 @@ BLMesh::BLMesh(const MeshContainer& mesh){
 	eptrs.push_back(eptr_cnt+=child->NumNodes());
 	//break;
       }
-      else if(child->getBCTag() == 20){
+      else if(child->getBCTag() == BLTermID){
 	symmetry_face = ch;
 	symmetry_child_el = child;
 	//std::cout << "Has symmetry face!" << std::endl;
       }
     }
     if(is_bl){
-      if(symmetry_face != -1) std::cout << "Has symmetry face" << std::endl;
+      //if(symmetry_face != -1) std::cout << "Has symmetry face" << std::endl;
       blels.push_back(*it);
       symmetry_faces.push_back(symmetry_face);
       if(symmetry_face != -1) symmetry_face_elements.insert(symmetry_child_el);

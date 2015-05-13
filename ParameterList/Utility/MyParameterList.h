@@ -13,7 +13,8 @@ class MyParameterList{
   virtual void Broadcast() = 0;
  protected:
 
-  
+  virtual std::string getListName() const = 0;
+
   virtual void Populate(const parameter_map_type& pmap) = 0;
 
   virtual std::set<std::string> GetValidParameters() const = 0;

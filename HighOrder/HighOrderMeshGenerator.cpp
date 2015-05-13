@@ -45,9 +45,7 @@ HighOrderMeshGenerator::generateHighOrderMeshRecursive(int order){
 
 
     for(int dim = 1; dim <= mesh.Dimension(); dim++){
-      std::cout << "starting to mesh: " << dim << " " << ord << std::endl;
       meshDimension(dim,ord);
-      std::cout << "finished meshing dim: " << dim << std::endl;
     }
     setNewChildrenAndOrientation();
     *meshold = *meshcurr;

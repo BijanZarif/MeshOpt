@@ -25,6 +25,7 @@ class NewMeshOptimizer{
 
   
   void setNodeDimToOpt(int dim){ node_dims_to_opt[dim] = true; }
+  void setMaxIts(int max){ MaxIts = max; }
 
   int Optimize();
 
@@ -32,8 +33,9 @@ class NewMeshOptimizer{
   int OptimizeSubmesh();
   double ComputeGlobalMerit();
   int SetActiveNodes();
+  double GetMinQuality();
   int InsertIdealElement(const MEl* el);
-  double ComputeElementDistortion(const MEl* el);
+  std::pair<double,double> ComputeElementDistortion(const MEl* el);
 
   std::unique_ptr<IdealElementBase> CreateIdealElement(const MEl* el, 
 						       const arma::mat& ideal);
@@ -55,9 +57,10 @@ class NewMeshOptimizer{
   std::set<int> active_nodes;
   std::map<int,std::vector<const MEl*> > node2el;
 
-  int MaxIts = 7;
+  int MaxIts = 20;
   double StopTol = 1.0e-2;
   double quality_threshold = 0.9;
+  double min_detJ;
 
   //std::map<const MEl*,unsigned int> ideal_index_map;
   

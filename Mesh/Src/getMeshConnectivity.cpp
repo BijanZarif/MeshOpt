@@ -209,18 +209,10 @@ void ComputeMeshConnectivity(MeshContainer& mesh){
   cout << "sizeof(MTet): " << sizeof(MTet) << endl;
   */
 
-  std::cout << "Number of elements: " << elements.size() << std::endl;
-  std::cout << "Number of subelements: " << subelements.size() << std::endl;
+  //std::cout << "Number of elements: " << elements.size() << std::endl;
+  //std::cout << "Number of subelements: " << subelements.size() << std::endl;
 
-  {
-    int symm_cnt = 0;
-    for(auto it = subelements.begin(); it != subelements.end(); ++it){
-      auto el = it->get();
-      //if(el->getOrder() != 2) std::cout << "Order not 2!" << std::endl;
-      if(el->getBCTag() == 5) symm_cnt++;
-    }
-    std::cout << "Number of symmetry faces: " << symm_cnt << std::endl;
-  }
+
 
 
   arma::wall_clock timer;
@@ -259,15 +251,21 @@ void ComputeMeshConnectivity(MeshContainer& mesh){
     }
   }
   
-  cout << "number of positive orientations: " << pos << endl;
-  cout << "number of negative orientations: " << neg << endl;
-  std::cout << "number of faces: " << subelements.size() << std::endl;
+  //cout << "number of positive orientations: " << pos << endl;
+  //cout << "number of negative orientations: " << neg << endl;
+
+
 
   
-  //cout << "Mesh in GB: " << mesh_bytes/1e9 << endl;
-  //cout << "NOdes size: " << (sizeof(MNode)+12)*nodes.size()/1e9 << endl;
-  cout << "number of subelements: " << subelements.size() <<  endl;
-  cout << "number of subsubelements: " << subsubelements.size() << endl;
+
+  for(int dim = mesh.Dimension(); dim > 0; dim--){
+    std::cout << "Number of elements of dim " << dim << ": " <<
+      mesh.getElementsOfDim(dim).size() << std::endl;
+  }
+
+
+  //cout << "number of subelements: " << subelements.size() <<  endl;
+  // cout << "number of subsubelements: " << subsubelements.size() << endl;
   
 
 }

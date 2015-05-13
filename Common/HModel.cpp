@@ -13,6 +13,7 @@
 #include "MeshOptConfig.h"
 #include "CaseParameterList.h"
 #include "HighOrderParameterList.h"
+#include "BLParameterList.h"
 
 //#include "OCC_Handler.h"
 #include "Mnode.h"
@@ -23,19 +24,17 @@ using namespace std;
 //namespace po = boost::program_options;
 
 HModel::HModel(void){
-  
-  //mesh_container = std::unique_ptr<MeshContainer>(new MeshContainer);
   mesh_reader = std::unique_ptr<GMSHReader>(new GMSHReader);
-  //occ_handler = std::unique_ptr<OCC_Handler>(new OCC_Handler);
   geometry_reader = std::unique_ptr<GeometryReader>(new GeometryReader);
   mesh_opt_config = std::make_shared<MeshOptConfig>();
+  std::cout << "Reading configuration file MeshOpt.config..." << std::endl;
   mesh_opt_config->Read();
 }
 
 int HModel::readMesh(void){
-  //std::cout << "gmsh file name: " << mesh_opt_config->getCaseParameters()->gmshFileName << std::endl;
-  mesh_reader->ReadMesh(mesh_container,
-			mesh_opt_config->getCaseParameters()->gmshFileName);
+  std::string filename = mesh_opt_config->getCaseParameters()->gmshFileName;
+  std::cout << "reading GMSH file: " << filename << std::endl;
+  mesh_reader->ReadMesh(mesh_container,filename);
   
   // Seg geo tags
   std::vector<myEdge>& edges = geometry_container.getEdgesNC();
@@ -63,9 +62,11 @@ int HModel::readMesh(void){
 
 HModel::~HModel(){}
 
-int HModel::WriteMesh(std::string filename, std::string format){
+int HModel::WriteMesh(std::string format){
   if(format=="GMSH"){
     GMSHWriter writer(mesh_container);
+    std::string filename = mesh_opt_config->getCaseParameters()->outputFileName;
+    
     writer.Save(filename,"ascii");
   }
   else{
@@ -75,9 +76,13 @@ int HModel::WriteMesh(std::string filename, std::string format){
 }
 
 int HModel::ReadGeometry(void){
-  geometry_reader->ReadGeometry(geometry_container,
-				mesh_opt_config->getCaseParameters()->
-				stepFileName);
+  std::string filename = mesh_opt_config->getCaseParameters()->stepFileName;
+
+  //std::cout << "reading STEP geometry file: " << filename << std::endl;
+
+  geometry_reader->ReadGeometry(geometry_container,filename);
+
+  std::cout << "\n\n";
 
 }
 int HModel::parseCommandLineOptions(int argc, char ** argv){
@@ -158,7 +163,8 @@ int HModel::parseCommandLineOptions(int argc, char ** argv){
 }
 
 int HModel::PrepareMesh(){
-    ComputeMeshConnectivity(mesh_container);
+  std::cout << "\nComputing mesh connectivities..." << std::endl;
+  ComputeMeshConnectivity(mesh_container);
 }
 
 int HModel::MeshHighOrder(){
@@ -168,7 +174,11 @@ int HModel::MeshHighOrder(){
   int porder = mesh_opt_config->getHighOrderParameters()->order;
 
   high_order_mesh = ho_mesh_generator.GenerateAndOptimize(porder);
-  bl_generator->SubDivideBL();
+
+  if(mesh_opt_config->getBLParameters()->GenerateBL ||
+     mesh_opt_config->getBLParameters()->HasBL){
+    bl_generator->SubDivideBL();
+  }
   
   //HighOrderMeshGenerator ho_mesh_generator;
   //high_order_mesh = ho_mesh_generator.generateHighOrderMeshRecursive(porder);
@@ -183,16 +193,15 @@ int HModel::generateBL(){
 					     mesh_opt_config->
 					     getBLParameters());
 	
-  /*				     
-  BoundaryLayerGenerator bl_generator(mesh_container,geometry_container,
-				      sf_factory,
-				      mesh_opt_config->getBLParameters());
-  */
+  			     
 
-  bl_generator->GenerateBL();
-  //std::cout << "After generate BL" << std::endl;
+  if(mesh_opt_config->getBLParameters()->GenerateBL){
 
-  bl_generator->OptimizeBL();
+
+    bl_generator->GenerateBL();
+
+    bl_generator->OptimizeBL();
+  }
 
 
 }

@@ -5,6 +5,7 @@
 #include "MeshContainer.h"
 #include "LBFGSOptimizer.h"
 #include "DenseNewtonOptimizer.h"
+#include "PlotOptimizationProgress.h"
 
 using namespace std;
 
@@ -66,9 +67,9 @@ double SubmeshOptimizer::OptimizeOneByOne(double threshold, int Nnearest,
 				       int type, double factor){
 
   std::unordered_set<const MEl*> watch;
-  std::map<gind,gind> activenodes;
+
+  activenodes.clear();
   
- 
   const node_map& nodes = mesh.getNodes();
   //const ideal_map& idealElements = mesh.getIdealElements();
   //std::map<MEl*,double>& all_merits = mesh.getAllMeritsNC();
@@ -79,10 +80,15 @@ double SubmeshOptimizer::OptimizeOneByOne(double threshold, int Nnearest,
   FindActiveElements(watch,activenodes,threshold,Nnearest,type);
 
 
+
+  if(activenodes.size() == 0){
+    return ComputeMerit();
+  }
+
   std::map<gind, std::vector<const MEl*> > Node2ElementList = 
     CreateNode2ElementList(watch,activenodes);
  
-  std::cout << "active nodes size: " << activenodes.size() << std::endl;
+  //std::cout << "active nodes size: " << activenodes.size() << std::endl;
 
   double global_merit = 0.0;
   
@@ -104,32 +110,14 @@ double SubmeshOptimizer::OptimizeOneByOne(double threshold, int Nnearest,
     //assert(elements.size() == 2);
     arma::vec debpos = {0.00178445,0.00558035,0};
     bool debug = false;
-    if(arma::norm(pos_old-debpos,2) < 1.0e-5){
-      std::cout << "active node is: " << nodes.at(nd->first)->getND() << std::endl;
-      debug = true;
-      std::cout << "setting debug true!" << std::endl;
-    }
     bool to_opt = true;
-    //if(elements[0]->getOrder() > 1 && sz != 1) to_opt = false;
-    if(elements.size() == 1){
-      debug = true;
-      //std::cout << "element size is 1 for node: " << nodes.at(nd->first)->getND() << std::endl;
-    }
+
     if(to_opt){
-    //if(sz == 2){
     std::vector<ElIdealPair> temp;
     for(int i=0; i<sz; i++){
-      //std::cout << "el num nodes: " << elements[i]->NumNodes() << " " <<  elements[i]->getOrder() << " " << elements[i]->getElementType() << std::endl;
       temp.emplace_back(elements[i],idealElements.at(elements[i]));
-      //if(elements[i]->getElementType() == 3){
-      //	std::cout << "el type is 3!" << std::endl;
-      //}
-      //std::cout << idealElements.at(elements[i]) << std::endl;
     }
 
-    //std::cout << temp->second << std::endl;
-
-    //std::cout << "h3" << std::endl;
     double merit0 = 0;
     for(int i = 0; i < elements.size(); i++){
       merit0+= all_merits[elements[i]];
@@ -203,8 +191,6 @@ int SubmeshOptimizer::Optimize(double threshold, std::vector<bool> to_opt,
 
   only_interior = only_interior_t;
 
-  using std::cout;
-  using std::endl;
 
 
 
@@ -214,7 +200,7 @@ int SubmeshOptimizer::Optimize(double threshold, std::vector<bool> to_opt,
     cout << nd->second->getType() << endl;
   }
   */
-  cout << "in  optimize one by one" << endl;
+  //cout << "in  optimize one by one" << endl;
 
   //RandomizeNodes(0.03);
   //return 1;
@@ -223,62 +209,65 @@ int SubmeshOptimizer::Optimize(double threshold, std::vector<bool> to_opt,
   timer.tic();
   arma::wall_clock inner_timer;
 
-  std::cout << "Initial Merit: " << ComputeMerit() << std::endl;
-  cout << "initial min Mesh quality: " << minMeshQuality() << endl;
-  std::cout << "initial min detS: " << minMeshDetS() << std::endl;
-  std::cout << "initial min detJ: " << minMeshDetJ() << std::endl;
   
-  int max_it = 10;
+  //FindActiveElements(watch,activenodes,threshold,0,-1);
+
+  OptimizeOneByOne(threshold,0,-1,1);
+
+  double merit0 = ComputeMerit();
+  std::cout << "Initial Merit: " << merit0 << std::endl;
+
+  PlotOptimizationHeader();
+  
+  //cout << "initial min Mesh quality: " << minMeshQuality() << endl;
+  //std::cout << "initial min detS: " << minMeshDetS() << std::endl;
+  //std::cout << "initial min detJ: " << minMeshDetJ() << std::endl;
+  
+  int max_it = 20;
   //int Nactive = 0;
   //int Nactive_old;
-  double Merit = 1.0e100;
+  double Merit = merit0;
   double Merit_old;
   for(int i=0; i<max_it; i++){
+    if(activenodes.size() == 0){
+      PlotOptimizationProgress(i,activenodes.size(),Merit/merit0,0,
+			       minMeshQuality(),minMeshDetJ());
+      break;
+    }
+    
     inner_timer.tic();
     //Nactive_old = Nactive;
     Merit_old = Merit;
     //Merit = OptimizeGlobal(threshold,1,-1,1);
+    //activenodes.clear();
+    //FindActiveElements(watch,activenodes,threshold,0,-1);
     Merit = OptimizeOneByOne(threshold,0,-1,1);
 
 
     UpdateMeshMerits();
     
     //OptimizeGlobal(threshold,2,-1,1.0e0);
-    cout << "Merit" << Merit << endl;
-    double diff = std::abs(Merit_old-Merit);
+    //cout << "Merit" << Merit << endl;
+    double diff = std::abs(Merit_old-Merit)/Merit;
+    double min_quality = minMeshQuality();
+    PlotOptimizationProgress(i,activenodes.size(),Merit/merit0,diff,
+			     min_quality,minMeshDetJ());
+    
     //double diff = 1.0;
-    cout << "diff: " << diff << endl;
-    std::cout << "min quality: " << minMeshQuality() << std::endl;
-    std::cout << "min detS: " << minMeshDetS() << std::endl;
-    std::cout << "min detJ: " << minMeshDetJ() << std::endl;
+    //cout << "diff: " << diff << endl;
+    //std::cout << "min quality: " << minMeshQuality() << std::endl;
+    //std::cout << "min detS: " << minMeshDetS() << std::endl;
+    //std::cout << "min detJ: " << minMeshDetJ() << std::endl;
 
-    //if(diff  == 0){
-    if(diff < 1.0e-1){
-      //cout << "Breaking" << endl;
+    if(diff < 1.0e-1 && min_quality > 1.0e-2){
       break;
     }
-    //if(Merit != Merit) return 0;
- 
-    
-    //OptimizeOneByOne(threshold,0,-1,std::min(double(i)/2.0+1,4.0));
-    //OptimizeGlobal(threshold,0,-1,4.0);
-    //OptimizeOneByOne(threshold,0,-1,8.0);
-    //OptimizeGlobal(threshold,0,-1,std::min(double(i)/2.0+1,4.0));
-    cout << "1x1 time: " << inner_timer.toc() << endl;
-
+   
   }
+  
+  
   UpdateMeshMerits();
 
-  //OptimizeOneByOne(threshold,0,3,1.0e4);
-  inner_timer.tic();
-  //SnapToBLExtent();
-  if(dims_to_opt[mesh.MeshDimension()]){
-    //SnapToBLExtent();
-  }
-  cout << "min Mesh quality: " << minMeshQuality() << endl;
-
-  cout << "Snap time: " << inner_timer.toc() << endl;
-  cout << "BL optimiztion time: " << timer.toc() << endl; 
 
   
 }

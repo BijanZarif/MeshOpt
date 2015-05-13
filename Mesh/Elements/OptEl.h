@@ -15,7 +15,8 @@ inline T Kronecker(const T i, const T j){ return (i == j) ? 1 : 0; }
 
 class OptEl: public Element{
  private:
-
+  double min_detJ = 1.0/0.0;
+  
 protected:
   const arma::mat& ideal;
   const ShapeFunctionMatrices* sf_ideal;
@@ -42,34 +43,34 @@ public:
        const ShapeFunctionMatrices* sf_ideal,
        GeometryContainer *geometry_t): 
   compel(compT), ideal(idealT), sf_ideal(sf_ideal),geometry(geometry_t){}
-  double computeDistortion() const;
+  double computeDistortion();
   const double computeGradMerit(arma::mat&, double& distortion,
 				double& DetS, double factor=1.0,
-				double minDetS=0.0) const;
+				double minDetS=0.0);
  
-  const double computeGradMeritParam(arma::mat&, double& distortion,
-				     double factor= 1.0, 
-				     double minDetS=0.0,
-				     int fd_node=-1) const;
+  //const double computeGradMerit(arma::mat&, double& distortion,
+  //				double factor= 1.0, 
+  //				double minDetS=0.0,
+  //				int fd_node=-1);
 
-  const arma::mat computeGradMeritFD(int fd_node=-1) const;
+  const arma::mat computeGradMeritFD(int fd_node=-1);
   double computeGradMeritParamNode(int node, arma::vec& grad, double factor=1);
   double computeHessMeritParamNode(int node, arma::vec& grad, arma::mat& hess,
 				   double factor = 1);
 
-  const double computeMerit(double factor=1) const;
+  const double computeMerit(double factor=1);
   const double computeMinDetS() const;
   const double computeMinDetJ() const;
   const double computeDebug() const;
   const arma::mat debugGradMerit() const;
   const arma::mat debugGradMeritFD() const;
-
+  const double getMinDetJ() const{ return min_detJ; }
 
 
   const arma::mat computeHessianMerit() const;
   const double computeHessianMeritFD(arma::mat& gradMerit,
 					arma::mat& HessianMerit,
-					double& dist, double factor) const;
+					double& dist, double factor);
 
 
 };

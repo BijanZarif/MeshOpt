@@ -2,14 +2,12 @@
 #include "ParameterManip.h"
 
 std::set<std::string> HighOrderParameterList::GetValidParameters() const{
-  return {"order","targetMinQuality","useOptimizedPoints",
-      "OptimizedNodeSpacing"};
+  return {"Order","TargetMinQuality","OptimizedNodeSpacing"};
 }
 
 void HighOrderParameterList::Populate(const parameter_map_type& pmap){
-  ParameterManip::OverrideInteger(order,"order",pmap);
-  ParameterManip::OverrideDouble(targetMinQuality,"targetMinQuality",pmap);
-  ParameterManip::OverrideBool(useOptimizedPoints,"useOptimizedPoints",pmap);
+  ParameterManip::OverrideInteger(order,"Order",pmap);
+  ParameterManip::OverrideDouble(targetMinQuality,"TargetMinQuality",pmap);
   ParameterManip::OverrideBool(OptimizedNodeSpacing,"OptimizedNodeSpacing",
 				  pmap);
 }
