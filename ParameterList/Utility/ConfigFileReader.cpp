@@ -34,8 +34,18 @@ bool ConfigFileReader::IgnoreLine(std::string line){
   if(line.length() == 0) return true;
   if(line.find_first_not_of(' ') == std::string::npos) return true;
   if(line.find_first_not_of('\t') == std::string::npos) return true;
-  if(line.find_first_of('#') != std::string::npos) return true;
+  //if(line.find_first_of('#') != std::string::npos) return true;
   else return false;
+}
+
+std::string ConfigFileReader::ParseComment(const std::string& in){
+  auto pos = in.find_first_of('#');
+  if(pos != std::string::npos){
+    return in.substr(0,pos);
+  }
+  else{
+    return in;
+  }
 }
 
 int ConfigFileReader::ReadConfigFile(std::string filename){
@@ -45,7 +55,8 @@ int ConfigFileReader::ReadConfigFile(std::string filename){
 
   string line;
   while(std::getline(in,line)){
-
+    line = ParseComment(line);
+    
     if(!IgnoreLine(line)){
 
       size_t pos_bracket = line.find("{");
@@ -56,6 +67,7 @@ int ConfigFileReader::ReadConfigFile(std::string filename){
 
 	std::string line2;
 	while(getline(in,line2)){
+	  line2 = ParseComment(line2);
 	  if(!IgnoreLine(line2)){
 	    if(line2[0] == '}') break;
 	  

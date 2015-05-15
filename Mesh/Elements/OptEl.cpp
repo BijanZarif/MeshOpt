@@ -505,7 +505,7 @@ double OptEl::computeDistortion(){
     //if(1) delta = std::abs(det(JI))*sqrt(alpha*alpha+alpha);
     //if(dj <= 0) delta = std::abs(det(JI))*sqrt(alpha*alpha+alpha);
     if(detS <= 0) delta = std::abs(det(JI))*sqrt(alpha*alpha+alpha);
-    //f(detS < 0) delta = std::abs(detS)*sqrt(alpha*alpha+alpha);
+    //if(detS < 0) delta = std::abs(detS)*sqrt(alpha*alpha+alpha);
     //if(detS < eps) delta = sqrt(eps*std::abs(eps-detS));
     else delta = 0.0;
     //delta = eps;

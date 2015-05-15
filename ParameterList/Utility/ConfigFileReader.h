@@ -13,6 +13,8 @@ class ConfigFileReader{
   all_parameter_type parameter_list;
 
   bool IgnoreLine(std::string line);
+  std::string ParseComment(const std::string& in);
+
  public:
   int ReadConfigFile(std::string filename);
   all_parameter_type& GetParameterList();
