@@ -11,7 +11,9 @@ Xevi Roca in:
 ### 1.0 GENERAL
 
 Currently, the only supported geometry format is *.stp. The geometry used to 
-generate the GMSH mesh must be composed of closed surfaces. A more comprehensive guide on how to use MeshOpt can be found in the wiki.
+generate the GMSH mesh must be composed of closed surfaces. 
+
+A more comprehensive guide on how to use MeshOpt can be found in the wiki.
 
 DEPENDANCIES:
 The following open-source libraries are required and will be automatically installed if not privided as arguments to CMake:
